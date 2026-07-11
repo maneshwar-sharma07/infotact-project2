@@ -3,6 +3,7 @@ import type { Request, Response } from "express"; // <-- Use "import type" for T
 import cors from "cors";
 import dotenv from "dotenv";
 import { connectDB } from "./config/db.js";
+import authRoutes from "./routes/auth.routes.js";
 
 // Load environment variables
 dotenv.config();
@@ -16,6 +17,9 @@ connectDB();
 // Enable Middlewares
 app.use(cors());
 app.use(express.json());
+
+// Register Routes
+app.use("/auth", authRoutes);
 
 // Base health endpoint
 app.get("/health", (req: Request, res: Response) => {
