@@ -2,13 +2,14 @@ import { Router, Request, Response } from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
+import { validateRegister, validateLogin } from "../middleware/validate.js";
 
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET || "your_super_secret_key_min_32_chars";
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
 
 // POST /auth/register - Register a new user
-router.post("/register", async (req: Request, res: Response) => {
+router.post("/register", validateRegister, async (req: Request, res: Response) => {
   try {
     const { name, email, password, role } = req.body;
 
@@ -54,7 +55,7 @@ router.post("/register", async (req: Request, res: Response) => {
 });
 
 // POST /auth/login - User Authentication
-router.post("/login", async (req: Request, res: Response) => {
+router.post("/login", validateLogin, async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
 
