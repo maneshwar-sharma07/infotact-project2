@@ -4,6 +4,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import { connectDB } from "./config/db.js";
 import authRoutes from "./routes/auth.routes.js";
+import productRoutes from "./routes/product.routes.js";
 
 // Load environment variables
 dotenv.config();
@@ -20,6 +21,7 @@ app.use(express.json());
 
 // Register Routes
 app.use("/auth", authRoutes);
+app.use("/api/products", productRoutes);
 
 // Base health endpoint
 app.get("/health", (req: Request, res: Response) => {
