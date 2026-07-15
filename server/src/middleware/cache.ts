@@ -45,3 +45,27 @@ export const cacheCatalog = async (req: Request, res: Response, next: NextFuncti
     next();
   }
 };
+
+// Invalidate all cached product catalog queries dynamically (production-safe using SCAN)
+export const invalidateCatalogCache = async (): Promise<void> => {
+  try {
+    console.log("[Cache] Invalidation triggered. Scanning for keys to evict...");
+    let cursor = "0";
+    const matchPattern = "catalog:page:*";
+
+    do {
+      // SCAN is non-blocking and safe for production compared to the KEYS command
+      const [newCursor, keys] = await redisClient.scan(cursor, "MATCH", matchPattern, "COUNT", 100);
+      cursor = newCursor;
+
+      if (keys.length > 0) {
+        console.log(`[Cache] Evicting keys: ${keys.join(", ")}`);
+        await redisClient.del(...keys);
+      }
+    } while (cursor !== "0");
+
+    console.log("[Cache] Catalog cache invalidation completed successfully.");
+  } catch (error) {
+    console.error(`[Cache] Error during cache invalidation: ${(error as Error).message}`);
+  }
+};

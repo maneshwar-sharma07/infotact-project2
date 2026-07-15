@@ -64,4 +64,84 @@ router.get("/:id", async (req: Request, res: Response) => {
   }
 });
 
+import { verifyToken, requireAdmin } from "../middleware/auth.js";
+import { invalidateCatalogCache } from "../middleware/cache.js";
+
+// POST /api/products - Create a new product (Admin Only)
+router.post("/", verifyToken, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const { name, description, price, stock, category, embedding } = req.body;
+
+    if (!name || !description || price === undefined || stock === undefined || !category) {
+      return res.status(400).json({ error: "Missing required product fields" });
+    }
+
+    const newProduct = new Product({
+      name,
+      description,
+      price,
+      stock,
+      category,
+      embedding: embedding || Array(384).fill(0) // Default zero vector if not provided
+    });
+
+    await newProduct.save();
+
+    // Evict all stale paginated catalog cache blocks
+    await invalidateCatalogCache();
+
+    return res.status(201).json({
+      message: "Product created successfully",
+      product: newProduct
+    });
+  } catch (error) {
+    return res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+// PUT /api/products/:id - Update product details (Admin Only)
+router.put("/:id", verifyToken, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+
+    const updatedProduct = await Product.findByIdAndUpdate(id, updates, { new: true, runValidators: true });
+
+    if (!updatedProduct) {
+      return res.status(404).json({ error: "Product not found" });
+    }
+
+    // Evict all stale paginated catalog cache blocks
+    await invalidateCatalogCache();
+
+    return res.json({
+      message: "Product updated successfully",
+      product: updatedProduct
+    });
+  } catch (error) {
+    return res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+// DELETE /api/products/:id - Remove product from catalog (Admin Only)
+router.delete("/:id", verifyToken, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const deletedProduct = await Product.findByIdAndDelete(id);
+
+    if (!deletedProduct) {
+      return res.status(404).json({ error: "Product not found" });
+    }
+
+    // Evict all stale paginated catalog cache blocks
+    await invalidateCatalogCache();
+
+    return res.json({
+      message: "Product deleted successfully"
+    });
+  } catch (error) {
+    return res.status(500).json({ error: (error as Error).message });
+  }
+});
+
 export default router;
