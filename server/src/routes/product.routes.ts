@@ -1,11 +1,11 @@
 import { Router, Request, Response } from "express";
 import Product from "../models/Product.js";
-import { cacheCatalog } from "../middleware/cache.js";
+import { getOrSetCache } from "../middleware/cache.js";
 
 const router = Router();
 
-// GET /api/products - Retrieve product list with pagination, sorting, and category filters
-router.get("/", cacheCatalog, async (req: Request, res: Response) => {
+// GET /api/products - Retrieve product list with pagination, sorting, and category filters (Cached)
+router.get("/", async (req: Request, res: Response) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 20;
@@ -14,45 +14,56 @@ router.get("/", cacheCatalog, async (req: Request, res: Response) => {
     const category = req.query.category as string;
     const sortBy = req.query.sortBy as string; // 'price_asc' | 'price_desc' | 'newest'
 
-    const filter: Record<string, any> = {};
-    if (category) {
-      filter.category = category;
-    }
+    // Create a dynamic query key
+    const cacheKey = `catalog:page:${page}:limit:${limit}:category:${category || "all"}:sort:${sortBy || "newest"}`;
 
-    let sortOption: Record<string, any> = { createdAt: -1 }; // Default: newest
-    if (sortBy === "price_asc") {
-      sortOption = { price: 1 };
-    } else if (sortBy === "price_desc") {
-      sortOption = { price: -1 };
-    }
-
-    // Execute query in MongoDB
-    const products = await Product.find(filter)
-      .sort(sortOption)
-      .skip(skip)
-      .limit(limit);
-
-    const totalProducts = await Product.countDocuments(filter);
-
-    return res.json({
-      products,
-      pagination: {
-        totalProducts,
-        currentPage: page,
-        totalPages: Math.ceil(totalProducts / limit),
-        pageSize: products.length
+    const result = await getOrSetCache(cacheKey, async () => {
+      const filter: Record<string, any> = {};
+      if (category) {
+        filter.category = category;
       }
-    });
+
+      let sortOption: Record<string, any> = { createdAt: -1 };
+      if (sortBy === "price_asc") {
+        sortOption = { price: 1 };
+      } else if (sortBy === "price_desc") {
+        sortOption = { price: -1 };
+      }
+
+      // Execute query in MongoDB
+      const products = await Product.find(filter)
+        .sort(sortOption)
+        .skip(skip)
+        .limit(limit);
+
+      const totalProducts = await Product.countDocuments(filter);
+
+      return {
+        products,
+        pagination: {
+          totalProducts,
+          currentPage: page,
+          totalPages: Math.ceil(totalProducts / limit),
+          pageSize: products.length
+        }
+      };
+    }, 600); // 10 minutes base cache TTL
+
+    return res.json(result);
   } catch (error) {
     return res.status(500).json({ error: (error as Error).message });
   }
 });
 
-// GET /api/products/:id - Retrieve specific product details
+// GET /api/products/:id - Retrieve specific product details (Cached)
 router.get("/:id", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const product = await Product.findById(id);
+    const cacheKey = `product:details:${id}`;
+
+    const product = await getOrSetCache(cacheKey, async () => {
+      return await Product.findById(id);
+    }, 600); // 10 minutes base cache TTL
 
     if (!product) {
       return res.status(404).json({ error: "Product not found" });
