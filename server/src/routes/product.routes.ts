@@ -55,6 +55,54 @@ router.get("/", async (req: Request, res: Response) => {
   }
 });
 
+// GET /api/products/search/keyword - Fallback regex-based keyword search (Cached)
+router.get("/search/keyword", async (req: Request, res: Response) => {
+  try {
+    const query = req.query.query as string;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const skip = (page - 1) * limit;
+
+    if (!query || query.trim() === "") {
+      return res.status(400).json({ error: "Search query is required" });
+    }
+
+    const cleanQuery = query.trim();
+    // Cache search results for 5 minutes with query-specific keys
+    const cacheKey = `search:keyword:query:${cleanQuery.toLowerCase()}:page:${page}:limit:${limit}`;
+
+    const result = await getOrSetCache(cacheKey, async () => {
+      // Search in name or description using case-insensitive regex
+      const searchFilter = {
+        $or: [
+          { name: { $regex: cleanQuery, $options: "i" } },
+          { description: { $regex: cleanQuery, $options: "i" } }
+        ]
+      };
+
+      const products = await Product.find(searchFilter)
+        .skip(skip)
+        .limit(limit);
+
+      const totalProducts = await Product.countDocuments(searchFilter);
+
+      return {
+        products,
+        pagination: {
+          totalProducts,
+          currentPage: page,
+          totalPages: Math.ceil(totalProducts / limit),
+          pageSize: products.length
+        }
+      };
+    }, 300); // 5 minutes cache TTL
+
+    return res.json(result);
+  } catch (error) {
+    return res.status(500).json({ error: (error as Error).message });
+  }
+});
+
 // GET /api/products/:id - Retrieve specific product details (Cached)
 router.get("/:id", async (req: Request, res: Response) => {
   try {
