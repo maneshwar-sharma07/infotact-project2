@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
-import Product from "../models/Product.js";
-import { connectDB } from "../config/db.js";
+import Product from "../models/Product";
+import { connectDB } from "../config/db";
 
 dotenv.config();
 
@@ -33,8 +33,8 @@ const seedDatabase = async () => {
 
     for (let i = 1; i <= 1000; i++) {
       const category = categories[Math.floor(Math.random() * categories.length)] as keyof typeof nouns;
-      const adjective = adjectives[Math.floor(Math.random() * adjectives.length)];
-      const item = nouns[category][Math.floor(Math.random() * nouns[category].length)];
+      const adjective = adjectives[Math.floor(Math.random() * adjectives.length)]!;
+      const item = nouns[category][Math.floor(Math.random() * nouns[category].length)]!;
       
       const name = `${adjective} ${item} - Model v${i}`;
       const description = `This is a ${adjective.toLowerCase()} ${item.toLowerCase()} designed for premium performance. Built with quality materials to ensure durability and style. Ideal for everyday use under various conditions.`;

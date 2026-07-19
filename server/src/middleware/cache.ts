@@ -1,5 +1,4 @@
-import { redisClient } from "../config/redis.js";
-
+import { redisClient } from "../config/redis";
 /**
  * Generic cache-aside helper function that wraps database operations with caching and performance logging.
  * @param key Unique cache key string

@@ -1,12 +1,13 @@
-import { Router, Request, Response } from "express";
+import { Router } from "express";
+import type { Request, Response } from "express";
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
-import User from "../models/User.js";
-import { validateRegister, validateLogin } from "../middleware/validate.js";
+import jwt, { type SignOptions } from "jsonwebtoken";
+import User from "../models/User";
+import { validateRegister, validateLogin } from "../middleware/validate";
 
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET || "your_super_secret_key_min_32_chars";
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
+const JWT_EXPIRES_IN = (process.env.JWT_EXPIRES_IN || "7d") as NonNullable<SignOptions["expiresIn"]>;
 
 // POST /auth/register - Register a new user
 router.post("/register", validateRegister, async (req: Request, res: Response) => {

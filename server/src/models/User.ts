@@ -27,7 +27,6 @@ UserSchema.methods.comparePassword = async function (password: string): Promise<
 };
 
 // Serialization safety: rename _id -> id, delete __v, hide passwordHash
-// Serialization safety: rename _id -> id, delete __v, hide passwordHash
 UserSchema.set("toJSON", {
   transform: (_doc, ret: Record<string, any>) => {
     ret.id = ret._id;
