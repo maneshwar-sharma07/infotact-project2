@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import api from "../services/api";
 
 interface Product {
@@ -13,8 +13,31 @@ interface Product {
 
 export default function ProductDetailsPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const handleDelete = async () => {
+  const confirmDelete = window.confirm(
+    "Are you sure you want to delete this product?"
+  );
+
+  if (!confirmDelete) return;
+
+  try {
+    await api.delete(`/products/${id}`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    });
+
+    alert("Product deleted successfully.");
+    navigate("/");
+  } catch (err) {
+    console.error(err);
+    alert("Failed to delete product.");
+  }
+};
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -84,18 +107,19 @@ export default function ProductDetailsPage() {
             {/* Action Buttons */}
             <div className="flex gap-4 mt-8">
 
-<Link
-  to={`/admin?id=${product.id}`}
-  className="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg font-semibold"
->
-  Edit
-</Link>
+          <Link
+            to={`/admin?id=${product.id}`}
+            className="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg font-semibold"
+          >
+            Edit
+          </Link>
 
-              <button
-                className="bg-red-600 hover:bg-red-700 px-6 py-3 rounded-lg font-semibold"
-              >
-                Delete
-              </button>
+          <button
+            onClick={handleDelete}
+            className="bg-red-600 hover:bg-red-700 px-6 py-3 rounded-lg font-semibold"
+          >
+            Delete
+          </button>
 
             </div>
 
