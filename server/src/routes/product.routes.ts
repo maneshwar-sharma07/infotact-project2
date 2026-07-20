@@ -1,6 +1,7 @@
 import { Router, Request, Response } from "express";
 import Product from "../models/Product.js";
 import { getOrSetCache } from "../middleware/cache.js";
+import { getEmbedding } from "../services/embedding.service.js";
 
 const router = Router();
 
@@ -94,6 +95,70 @@ router.get("/search/keyword", async (req: Request, res: Response) => {
           totalPages: Math.ceil(totalProducts / limit),
           pageSize: products.length
         }
+      };
+    }, 300); // 5 minutes cache TTL
+
+    return res.json(result);
+  } catch (error) {
+    return res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+// GET /api/products/semantic-search - AI Vector Semantic Search (Cached)
+router.get("/semantic-search", async (req: Request, res: Response) => {
+  try {
+    const query = req.query.query as string;
+    const limit = parseInt(req.query.limit as string) || 10;
+
+    if (!query || query.trim() === "") {
+      return res.status(400).json({ error: "Search query string is required" });
+    }
+
+    const cleanQuery = query.trim();
+    const cacheKey = `search:semantic:query:${cleanQuery.toLowerCase()}:limit:${limit}`;
+
+    const result = await getOrSetCache(cacheKey, async () => {
+      // 1. Generate 384-dimensional query vector using local HuggingFace AI pipeline
+      const queryVector = await getEmbedding(cleanQuery);
+
+      // 2. Perform Cosine Similarity Vector Search in MongoDB
+      let products;
+      try {
+        products = await Product.aggregate([
+          {
+            $vectorSearch: {
+              index: "vector_index",
+              path: "embedding",
+              queryVector: queryVector,
+              numCandidates: 100,
+              limit: limit
+            }
+          },
+          {
+            $project: {
+              name: 1,
+              description: 1,
+              price: 1,
+              stock: 1,
+              category: 1,
+              score: { $meta: "vectorSearchScore" }
+            }
+          }
+        ]);
+      } catch (aggregationErr) {
+        // Fallback for local MongoDB standalone instances where Atlas Vector Index is not pre-configured
+        products = await Product.find({
+          $or: [
+            { name: { $regex: cleanQuery, $options: "i" } },
+            { description: { $regex: cleanQuery, $options: "i" } }
+          ]
+        }).limit(limit);
+      }
+
+      return {
+        products,
+        count: products.length,
+        query: cleanQuery
       };
     }, 300); // 5 minutes cache TTL
 

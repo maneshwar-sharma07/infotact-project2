@@ -8,8 +8,8 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "nodemon --watch src -e ts,json --exec ts-node src/index.ts",
-    "seed": "ts-node-esm src/scripts/seed.ts",
-    "test:cache": "ts-node-esm src/scripts/testCache.ts"
+    "seed": "tsx src/scripts/seed.ts",
+    "test:cache": "tsx src/scripts/testCache.ts"
   },
   
   "dependencies": {
@@ -31,6 +31,7 @@
     "@types/node": "^26.1.0",
     "nodemon": "^3.1.14",
     "ts-node": "^10.9.2",
+    "tsx": "^4.19.2",
     "typescript": "^6.0.3"
   }
 }
