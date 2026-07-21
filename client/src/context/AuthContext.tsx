@@ -1,63 +1,82 @@
-﻿import React, { createContext, useState, useContext, ReactNode } from 'react';
+import { createContext, useContext, useState, type ReactNode } from "react";
+import axios from "axios";
+import api from "../services/api";
 
-interface AuthContextType {
-  user: any;
+export type AuthUser = {
+  id?: string;
+  name: string;
+  email: string;
+  role?: "admin" | "customer";
+};
+
+type AuthContextType = {
+  user: AuthUser | null;
   login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
   signup: (name: string, email: string, password: string) => Promise<void>;
-  loading: boolean;
-  error: string | null;
-}
+  logout: () => void;
+};
+
+type AuthResponse = { token: string; user?: AuthUser };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+function getStoredUser(): AuthUser | null {
+  try {
+    const storedUser = localStorage.getItem("user");
+    return storedUser ? (JSON.parse(storedUser) as AuthUser) : null;
+  } catch {
+    localStorage.removeItem("user");
+    return null;
+  }
+}
+
+function getRequestError(error: unknown, fallback: string): string {
+  if (!axios.isAxiosError(error)) return fallback;
+
+  const responseData = error.response?.data as { message?: unknown; error?: unknown } | undefined;
+  const message = responseData?.message ?? responseData?.error;
+  return typeof message === "string" && message.trim() ? message : fallback;
+}
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<AuthUser | null>(getStoredUser);
+
+  const persistSession = (response: AuthResponse) => {
+    localStorage.setItem("token", response.token);
+    if (response.user) {
+      localStorage.setItem("user", JSON.stringify(response.user));
+      setUser(response.user);
+    }
+  };
 
   const login = async (email: string, password: string) => {
-    setLoading(true);
-    setError(null);
     try {
-      // API call later
-      console.log('Login:', email);
-      setUser({ email, name: 'User' });
-    } catch (err) {
-      setError('Login failed');
-    } finally {
-      setLoading(false);
+      const response = await api.post<AuthResponse>("/auth/login", { email, password });
+      persistSession(response.data);
+    } catch (error: unknown) {
+      throw new Error(getRequestError(error, "Invalid email or password."));
     }
   };
 
   const signup = async (name: string, email: string, password: string) => {
-    setLoading(true);
-    setError(null);
     try {
-      console.log('Signup:', { name, email });
-      setUser({ email, name });
-    } catch (err) {
-      setError('Signup failed');
-    } finally {
-      setLoading(false);
+      await api.post<AuthResponse>("/auth/register", { name, email, password });
+    } catch (error: unknown) {
+      throw new Error(getRequestError(error, "Registration failed."));
     }
   };
 
   const logout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
     setUser(null);
   };
 
-  return (
-    <AuthContext.Provider value={{ user, login, logout, signup, loading, error }}>
-      {children}
-    </AuthContext.Provider>
-  );
-};
+  return <AuthContext.Provider value={{ user, login, signup, logout }}>{children}</AuthContext.Provider>;
+}
 
-export const useAuth = () => {
+export function useAuth() {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within AuthProvider');
-  }
+  if (!context) throw new Error("useAuth must be used within AuthProvider.");
   return context;
-};
+}
