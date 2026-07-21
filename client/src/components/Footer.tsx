@@ -5,7 +5,7 @@ const CATEGORY_LINKS: [string, string][] = [["Electronics", "/catalog"], ["Fashi
 
 export default function Footer() {
   return <footer className="border-t border-gray-800 bg-[#0A0A0F]">
-    <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-16">
+    <div className="mx-auto w-full max-w-[1600px] px-4 py-14 sm:px-6 sm:py-16 lg:px-8">
       <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr] lg:gap-12">
         <div><Link to="/" className="text-2xl font-bold text-purple-400">ShopSphere</Link><p className="mt-4 max-w-sm leading-7 text-gray-400">Curated products and a premium shopping experience, all in one place.</p><div className="mt-6 flex gap-3"><SocialLink label="Instagram">◎</SocialLink><SocialLink label="Facebook">f</SocialLink><SocialLink label="X">𝕏</SocialLink></div></div>
         <FooterLinks title="Quick Links" links={QUICK_LINKS} />
