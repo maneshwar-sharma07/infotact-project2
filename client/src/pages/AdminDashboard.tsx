@@ -40,56 +40,54 @@ export default function AdminDashboard() {
 
     fetchProduct();
   }, [productId]);
+      const handleChange = (
+        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+      ) => {
+        setForm({
+          ...form,
+          [e.target.name]: e.target.value,
+        });
+      };
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value,
-    });
-  };
+      const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    setLoading(true);
-    setMessage("");
-  const config = {
-  headers: {
-  Authorization: `Bearer ${localStorage.getItem("token")}`,
-    },
-  };
+        setLoading(true);
+        setMessage("");
+    const config = {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    };
 
     try {
       if (productId) {
         await api.put(
-       `/products/${productId}`,
-       {
-          name: form.name,
-          description: form.description,
-          price: Number(form.price),
-          stock: Number(form.stock),
-          category: form.category,
-        },
-        config
-      );
+          `/products/${productId}`,
+          {
+            name: form.name,
+            description: form.description,
+            price: Number(form.price),
+            stock: Number(form.stock),
+            category: form.category,
+          },
+          config
+        );
 
         setMessage("✅ Product Updated Successfully!");
       } else {
         await api.post(
-        "/products", 
+          "/products",
           {
-          name: form.name,
-          description: form.description,
-          price: Number(form.price),
-          stock: Number(form.stock),
-          category: form.category,
-          embedding: [0],
-        },
-      config  
-      );
-
+            name: form.name,
+            description: form.description,
+            price: Number(form.price),
+            stock: Number(form.stock),
+            category: form.category,
+            embedding: [0],
+          },
+          config
+        );
         setMessage("✅ Product Added Successfully!");
       }
 
