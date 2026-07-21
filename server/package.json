@@ -1,0 +1,37 @@
+{
+  "name": "infotact-project2-server",
+  "version": "1.0.0",
+  "description": "High-Performance E-Commerce Engine Server with AI Vector Search",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "nodemon --watch src -e ts,json --exec ts-node src/index.ts",
+    "seed": "tsx src/scripts/seed.ts",
+    "test:cache": "tsx src/scripts/testCache.ts"
+  },
+  
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "ioredis": "^5.11.1",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.7.4",
+    "socket.io": "^4.8.3",
+    "@xenova/transformers": "^2.17.2"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^26.1.0",
+    "nodemon": "^3.1.14",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.19.2",
+    "typescript": "^6.0.3"
+  }
+}
