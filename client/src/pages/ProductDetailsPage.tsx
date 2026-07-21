@@ -9,6 +9,7 @@ interface Product {
   price: number;
   stock: number;
   category: string;
+  imageUrl?: string;
 }
 
 export default function ProductDetailsPage() {
@@ -76,61 +77,109 @@ export default function ProductDetailsPage() {
 
         <div className="grid md:grid-cols-2">
 
-          <div className="flex items-center justify-center bg-gray-900 h-96">
-            <h1 className="text-6xl font-bold text-gray-500">
-              Product
-            </h1>
+      <div className="relative overflow-hidden bg-[#0F172A]">
+
+        <img
+          src={
+            product.imageUrl ??
+            "https://placehold.co/800x700/111827/FFFFFF?text=Product"
+          }
+          alt={product.name}
+          className="h-full w-full object-cover transition duration-500 hover:scale-105"
+        />
+
+        <span className="absolute left-6 top-6 rounded-full bg-cyan-500 px-4 py-2 text-sm font-semibold text-black">
+          {product.category}
+        </span>
+
+        <span
+          className={`absolute right-6 top-6 rounded-full px-4 py-2 text-sm font-semibold ${
+            product.stock > 0
+              ? "bg-green-500 text-black"
+              : "bg-red-500 text-white"
+          }`}
+        >
+          {product.stock > 0 ? "In Stock" : "Out of Stock"}
+        </span>
+
+      </div>
+
+      <div className="p-10">
+
+        <div className="flex items-center gap-3">
+
+          <span className="rounded-full bg-yellow-400 px-3 py-1 text-sm font-bold text-black">
+            ⭐ 4.8
+          </span>
+
+          <span className="text-gray-400">
+            Premium Quality
+          </span>
+
+        </div>
+
+        <h1 className="mt-5 text-5xl font-extrabold">
+          {product.name}
+        </h1>
+
+        <p className="mt-6 leading-8 text-gray-400">
+          {product.description}
+        </p>
+
+        <h2 className="mt-8 text-5xl font-bold text-purple-400">
+          ₹{product.price}
+        </h2>
+
+        <div className="mt-8 grid grid-cols-2 gap-5">
+
+          <div className="rounded-xl bg-[#1A1A25] p-5">
+            <p className="text-sm text-gray-500">
+              Availability
+            </p>
+
+            <h3 className="mt-2 text-xl font-bold">
+              {product.stock} Units
+            </h3>
           </div>
 
-          <div className="p-8">
-
-            <span className="text-cyan-400">
-              {product.category}
-            </span>
-
-            <h1 className="text-4xl font-bold mt-3">
-              {product.name}
-            </h1>
-
-            <p className="text-gray-400 mt-5">
-              {product.description}
+          <div className="rounded-xl bg-[#1A1A25] p-5">
+            <p className="text-sm text-gray-500">
+              Delivery
             </p>
 
-            <h2 className="text-purple-400 text-3xl font-bold mt-6">
-              ₹{product.price}
-            </h2>
+            <h3 className="mt-2 text-xl font-bold text-green-400">
+              Free Shipping
+            </h3>
+          </div>
 
-            <p className="mt-4 text-green-400">
-              {product.stock} In Stock
-            </p>
+        </div>
 
-            {/* Action Buttons */}
-            <div className="flex gap-4 mt-8">
+        <div className="mt-10 flex flex-wrap gap-4">
 
           <Link
             to={`/admin?id=${product.id}`}
-            className="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg font-semibold"
+            className="rounded-xl bg-blue-600 px-8 py-3 font-semibold transition hover:bg-blue-700"
           >
-            Edit
+            ✏ Edit
           </Link>
 
           <button
             onClick={handleDelete}
-            className="bg-red-600 hover:bg-red-700 px-6 py-3 rounded-lg font-semibold"
+            className="rounded-xl bg-red-600 px-8 py-3 font-semibold transition hover:bg-red-700"
           >
-            Delete
+            🗑 Delete
           </button>
 
-            </div>
+          <Link
+            to="/"
+            className="rounded-xl border border-purple-500 px-8 py-3 font-semibold text-purple-400 transition hover:bg-purple-600 hover:text-white"
+          >
+            ← Back
+          </Link>
 
-            <Link
-              to="/"
-              className="inline-block mt-8 bg-purple-600 hover:bg-purple-700 px-6 py-3 rounded-lg"
-            >
-              ← Back to Catalog
-            </Link>
+        </div>
 
-          </div>
+      </div>
 
         </div>
 
