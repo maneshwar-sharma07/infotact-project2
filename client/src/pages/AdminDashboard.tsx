@@ -55,27 +55,40 @@ export default function AdminDashboard() {
 
     setLoading(true);
     setMessage("");
+  const config = {
+  headers: {
+  Authorization: `Bearer ${localStorage.getItem("token")}`,
+    },
+  };
 
     try {
       if (productId) {
-        await api.put(`/products/${productId}`, {
+        await api.put(
+       `/products/${productId}`,
+       {
           name: form.name,
           description: form.description,
           price: Number(form.price),
           stock: Number(form.stock),
           category: form.category,
-        });
+        },
+        config
+      );
 
         setMessage("✅ Product Updated Successfully!");
       } else {
-        await api.post("/products", {
+        await api.post(
+        "/products", 
+          {
           name: form.name,
           description: form.description,
           price: Number(form.price),
           stock: Number(form.stock),
           category: form.category,
           embedding: [0],
-        });
+        },
+      config  
+      );
 
         setMessage("✅ Product Added Successfully!");
       }
