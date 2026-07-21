@@ -108,7 +108,6 @@ export default function LoginPage() {
             Sign Up
           </Link>
         </p>
-
       </div>
 
     </div>
