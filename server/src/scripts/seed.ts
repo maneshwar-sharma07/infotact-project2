@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
-import Product from "../models/Product";
-import { connectDB } from "../config/db";
+import Product from "../models/Product.js";
+import { connectDB } from "../config/db.js";
+import { getEmbedding } from "../services/embedding.service.js";
 
 dotenv.config();
 
@@ -15,32 +16,46 @@ const nouns = {
   "Beauty & Care": ["Face Moisturizer", "Sunscreen Lotion", "Hair Dryer", "Organic Shampoo", "Electric Toothbrush", "Beard Oil"]
 };
 
-// Generates a mock vector embedding (384 dimensions) with values between -1 and 1
+// Generates a fallback vector embedding (384 dimensions)
 const generateMockEmbedding = (dimensions = 384): number[] => {
   return Array.from({ length: dimensions }, () => parseFloat((Math.random() * 2 - 1).toFixed(6)));
 };
 
 const seedDatabase = async () => {
   try {
-    // Establish connection to database
+    // 1. Connect to Database
     await connectDB();
 
-    console.log("[Seeder] Clearing existing products...");
+    console.log("[Seeder] Clearing existing products from database...");
     await Product.deleteMany({});
 
-    console.log("[Seeder] Generating 1000 mock products with vector embeddings...");
+    console.log("[Seeder] Pre-computing category AI embeddings...");
+    const baseEmbeddingMap: Record<string, number[]> = {};
+
+    for (const cat of categories) {
+      try {
+        console.log(`[Seeder] Computing base vector for category: ${cat}`);
+        baseEmbeddingMap[cat] = await getEmbedding(`High performance ${cat} product for everyday usage`);
+      } catch (err) {
+        baseEmbeddingMap[cat] = generateMockEmbedding(384);
+      }
+    }
+
+    console.log("[Seeder] Generating 1000 catalog products...");
     const mockProducts = [];
 
     for (let i = 1; i <= 1000; i++) {
       const category = categories[Math.floor(Math.random() * categories.length)] as keyof typeof nouns;
-      const adjective = adjectives[Math.floor(Math.random() * adjectives.length)]!;
-      const item = nouns[category][Math.floor(Math.random() * nouns[category].length)]!;
-      
+      const adjective = adjectives[Math.floor(Math.random() * adjectives.length)];
+      const item = nouns[category][Math.floor(Math.random() * nouns[category].length)];
+
       const name = `${adjective} ${item} - Model v${i}`;
       const description = `This is a ${adjective.toLowerCase()} ${item.toLowerCase()} designed for premium performance. Built with quality materials to ensure durability and style. Ideal for everyday use under various conditions.`;
-      const price = parseFloat((Math.random() * 490 + 10).toFixed(2)); // $10 - $500
-      const stock = Math.floor(Math.random() * 100) + 5; // 5 - 104
-      const embedding = generateMockEmbedding(384);
+      const price = parseFloat((Math.random() * 490 + 10).toFixed(2));
+      const stock = Math.floor(Math.random() * 100) + 5;
+
+      const baseVector = baseEmbeddingMap[category] || generateMockEmbedding(384);
+      const embedding = baseVector.map(val => parseFloat((val + (Math.random() * 0.08 - 0.04)).toFixed(6)));
 
       mockProducts.push({
         name,
@@ -52,13 +67,16 @@ const seedDatabase = async () => {
       });
     }
 
-    console.log("[Seeder] Inserting mock products into MongoDB...");
+    console.log("[Seeder] Inserting 1000 products into MongoDB...");
     await Product.insertMany(mockProducts);
 
-    console.log("[Seeder] Successfully seeded 1000 products!");
+    console.log("==========================================");
+    console.log("✅ [SUCCESS] Database successfully seeded with 1,000 products!");
+    console.log("==========================================");
+
     process.exit(0);
   } catch (error) {
-    console.error(`[Seeder] Error during database seeding: ${(error as Error).message}`);
+    console.error(`❌ [Seeder Error] ${(error as Error).message}`);
     process.exit(1);
   }
 };

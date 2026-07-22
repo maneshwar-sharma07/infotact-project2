@@ -75,7 +75,20 @@ export const invalidateCatalogCache = async (): Promise<void> => {
       }
     } while (cursor !== "0");
 
-    console.log("[Cache] Catalog and details cache invalidation completed successfully.");
+    // Evict keyword search caches
+    cursor = "0";
+    const matchSearchPattern = "search:keyword:*";
+    do {
+      const [newCursor, keys] = await redisClient.scan(cursor, "MATCH", matchSearchPattern, "COUNT", 100);
+      cursor = newCursor;
+
+      if (keys.length > 0) {
+        console.log(`[Cache] Evicting keyword search keys: ${keys.join(", ")}`);
+        await redisClient.del(...keys);
+      }
+    } while (cursor !== "0");
+
+    console.log("[Cache] Catalog, details, and search cache invalidation completed successfully.");
   } catch (error) {
     console.error(`[Cache] Error during cache invalidation: ${(error as Error).message}`);
   }
