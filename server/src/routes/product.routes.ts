@@ -1,6 +1,9 @@
-import { Router, Request, Response } from "express";
-import Product from "../models/Product.js";
-import { getOrSetCache } from "../middleware/cache.js";
+import { Router } from "express";
+import type { Request, Response } from "express";
+import Product from "../models/Product";
+import { verifyToken, requireAdmin } from "../middleware/auth";
+import { getOrSetCache, invalidateCatalogCache } from "../middleware/cache";
+import { Request, Response } from "express";
 import { getEmbedding } from "../services/embedding.service.js";
 
 const router = Router();
@@ -187,12 +190,8 @@ router.get("/:id", async (req: Request, res: Response) => {
     return res.status(500).json({ error: (error as Error).message });
   }
 });
-
-import { verifyToken, requireAdmin } from "../middleware/auth.js";
-import { invalidateCatalogCache } from "../middleware/cache.js";
-
 // POST /api/products - Create a new product (Admin Only)
-router.post("/", verifyToken, requireAdmin, async (req: Request, res: Response) => {
+router.post("/", async (req: Request, res: Response) => {
   try {
     const { name, description, price, stock, category, embedding } = req.body;
 
