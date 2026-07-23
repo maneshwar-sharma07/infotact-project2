@@ -130,3 +130,72 @@ Authenticate user credentials and retrieve a session JWT token.
     "error": "Invalid email or password"
   }
   ```
+
+---
+
+### 🛍️ 4. Product Catalog Listing (Redis Cached)
+Fetch paginated catalog listings with category filters and sorting. Sub-50ms target met via Cache-Aside.
+
+* **URL**: `/api/products`
+* **Method**: `GET`
+* **Query Parameters**:
+  * `page` (optional, default: `1`)
+  * `limit` (optional, default: `20`)
+  * `category` (optional, e.g. `Electronics`)
+  * `sortBy` (optional, e.g. `price_asc`, `price_desc`, `newest`)
+* **Success Response (200 OK)**:
+  ```json
+  {
+    "products": [
+      {
+        "name": "Smart Watch - Model v1",
+        "description": "Premium smart watch designed for performance.",
+        "price": 199.99,
+        "stock": 45,
+        "category": "Electronics",
+        "id": "668ffe..."
+      }
+    ],
+    "pagination": {
+      "totalProducts": 1000,
+      "currentPage": 1,
+      "totalPages": 50,
+      "pageSize": 20
+    }
+  }
+  ```
+
+---
+
+### 🔍 5. Keyword Search (Fallback Search Engine)
+Case-insensitive regex matching for product names or descriptions.
+
+* **URL**: `/api/products/search/keyword?query=watch`
+* **Method**: `GET`
+* **Success Response (200 OK)**: Same output format as `/api/products`.
+
+---
+
+### 📦 6. Product Details (Redis Cached)
+Retrieve a single product's details by ID.
+
+* **URL**: `/api/products/:id`
+* **Method**: `GET`
+* **Success Response (200 OK)**: Single product JSON object.
+
+---
+
+### 🛠️ 7. Admin Product Operations (RBAC Protected)
+Create, update, or delete catalog products. Triggers instant pattern invalidation across Redis cache keys.
+
+* **URL**: `/api/products` (POST) | `/api/products/:id` (PUT / DELETE)
+* **Headers**: `Authorization: Bearer <ADMIN_JWT_TOKEN>`
+
+---
+
+## ⚡ Cache & Latency Integration Tests
+Run automated benchmark tests to verify Cache Miss, Cache Hit speed target (<50ms), and Cache Invalidation eviction:
+```bash
+npm run test:cache
+```
+
