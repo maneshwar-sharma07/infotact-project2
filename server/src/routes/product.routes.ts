@@ -1,4 +1,5 @@
-import { Router, Request, Response } from "express";
+import { Router } from "express";
+import type { Request, Response } from "express";
 import Product from "../models/Product.js";
 import { getOrSetCache } from "../middleware/cache.js";
 import { getEmbedding } from "../services/embedding.service.js";
