@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
-import Product from "../models/Product.js";
-import { connectDB } from "../config/db.js";
-import { getEmbedding } from "../services/embedding.service.js";
+import Product from "../models/Product";
+import { connectDB } from "../config/db";
+import { getEmbedding } from "../services/embedding.service";
 
 dotenv.config();
 

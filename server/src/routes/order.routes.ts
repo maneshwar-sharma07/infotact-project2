@@ -1,6 +1,6 @@
 import { Router, Response } from "express";
-import Order from "../models/Order.js";
-import { verifyToken } from "../middleware/auth.js";
+import Order from "../models/Order";
+import { verifyToken } from "../middleware/auth";
 
 const router = Router();
 
