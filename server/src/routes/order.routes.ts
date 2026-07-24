@@ -114,4 +114,15 @@ router.post("/", verifyToken, async (req: any, res: Response) => {
   }
 });
 
+// GET /api/orders/my-orders - Retrieve order history for the authenticated user
+router.get("/my-orders", verifyToken, async (req: any, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    const orders = await Order.find({ user: userId }).sort({ createdAt: -1 });
+    return res.json(orders);
+  } catch (error) {
+    return res.status(500).json({ error: (error as Error).message });
+  }
+});
+
 export default router;
