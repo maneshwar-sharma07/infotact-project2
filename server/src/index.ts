@@ -2,10 +2,10 @@ import express from "express";
 import type { Request, Response } from "express"; // <-- Use "import type" for TypeScript interfaces
 import cors from "cors";
 import dotenv from "dotenv";
-import { connectDB } from "./config/db.js";
-import authRoutes from "./routes/auth.routes.js";
-import productRoutes from "./routes/product.routes.js";
-import orderRoutes from "./routes/order.routes.js";
+import { connectDB } from "./config/db";
+import authRoutes from "./routes/auth.routes";
+import productRoutes from "./routes/product.routes";
+import orderRoutes from "./routes/order.routes";
 
 // Load environment variables
 dotenv.config();

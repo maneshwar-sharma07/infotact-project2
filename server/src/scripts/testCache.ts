@@ -1,8 +1,8 @@
 import dotenv from "dotenv";
-import { connectDB } from "../config/db.js";
-import { redisClient } from "../config/redis.js";
-import Product from "../models/Product.js";
-import { getOrSetCache, invalidateCatalogCache } from "../middleware/cache.js";
+import { connectDB } from "../config/db";
+import { redisClient } from "../config/redis";
+import Product from "../models/Product";
+import { getOrSetCache, invalidateCatalogCache } from "../middleware/cache";
 
 dotenv.config();
 
