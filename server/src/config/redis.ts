@@ -29,4 +29,5 @@ redisClient.on("ready", () => {
 
 redisClient.on("error", () => {
   // Ignore Redis errors during frontend development
+  
 });
