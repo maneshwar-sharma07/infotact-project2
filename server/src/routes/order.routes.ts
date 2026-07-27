@@ -5,6 +5,7 @@ import Product from "../models/Product.js";
 import { verifyToken } from "../middleware/auth.js";
 import { acquireLock, releaseLock } from "../services/redisLock.service.js";
 import { invalidateCatalogCache } from "../middleware/cache.js";
+import { io } from "../socket/socketServer.js"; // <-- Imported Socket.IO instance
 
 const router = Router();
 
@@ -89,7 +90,31 @@ router.post("/", verifyToken, async (req: any, res: Response) => {
 
     await newOrder.save();
 
-    // 5. Invalidate catalog caches since product stock values have updated
+    // 5. Emit real-time stock updates via Socket.IO
+    if (io) {
+      for (const item of items) {
+        try {
+          const product = await Product.findById(item.product);
+          if (product) {
+            console.log(`[Socket.IO] Emitting stock:update for product ${item.product} | Stock: ${product.stock}`);
+            // Broadcast to the general storefront catalog listeners
+            io.emit("stock:update", {
+              productId: item.product,
+              stock: product.stock
+            });
+            // Broadcast to the specific details page channel room
+            io.to(`product:${item.product}`).emit("stock:update", {
+              productId: item.product,
+              stock: product.stock
+            });
+          }
+        } catch (socketErr) {
+          console.error(`[Socket.IO] Stock emit error: ${(socketErr as Error).message}`);
+        }
+      }
+    }
+
+    // 6. Invalidate catalog caches since product stock values have updated
     await invalidateCatalogCache();
 
     // 6. Step 4: Release all Redis locks
