@@ -15,7 +15,10 @@ router.post("/", verifyToken, async (req: any, res: Response) => {
 
   // 1. Basic request validation
   if (!items || !Array.isArray(items) || items.length === 0) {
-    return res.status(400).json({ error: "Order must contain at least one item." });
+    return res.status(400).json({
+      error: "Order must contain at least one item.",
+      code: "ERR_INVALID_REQUEST"
+    });
   }
 
   const acquiredLocks: string[] = [];
@@ -31,7 +34,9 @@ router.post("/", verifyToken, async (req: any, res: Response) => {
           await releaseLock(lockedId);
         }
         return res.status(409).json({
-          error: `Server is busy processing item ${item.product}. Please try checking out again.`
+          error: `Server is busy processing item ${item.product}. Please try checking out again.`,
+          code: "ERR_LOCK_TIMEOUT",
+          details: { productId: item.product }
         });
       }
       acquiredLocks.push(item.product);
@@ -64,7 +69,9 @@ router.post("/", verifyToken, async (req: any, res: Response) => {
         }
 
         return res.status(400).json({
-          error: `Insufficient stock for product id ${item.product} or product does not exist.`
+          error: `Insufficient stock for product id ${item.product} or product does not exist.`,
+          code: "ERR_OUT_OF_STOCK",
+          details: { productId: item.product }
         });
       }
 
@@ -110,7 +117,10 @@ router.post("/", verifyToken, async (req: any, res: Response) => {
       await releaseLock(lockedId).catch(err => console.error(`[Critical Unlock Error] ${err.message}`));
     }
 
-    return res.status(500).json({ error: "Internal checkout transaction failure." });
+    return res.status(500).json({
+      error: "Internal checkout transaction failure.",
+      code: "ERR_INTERNAL_FAILURE"
+    });
   }
 });
 
