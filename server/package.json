@@ -9,7 +9,8 @@
     "dev": "nodemon --watch src -e ts,json --exec ts-node src/index.ts",
     "seed": "tsx src/scripts/seed.ts",
     "test:cache": "tsx src/scripts/testCache.ts",
-    "test:concurrency": "tsx src/scripts/testConcurrency.ts"
+    "test:concurrency": "tsx src/scripts/testConcurrency.ts",
+    "audit": "tsx src/scripts/auditCode.ts"
   },
   
   "dependencies": {
