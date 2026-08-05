@@ -1,10 +1,13 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
-import Product from "../models/Product.js";
-import { verifyToken, requireAdmin } from "../middleware/auth.js";
-import { getOrSetCache, invalidateCatalogCache } from "../middleware/cache.js";
-import { getEmbedding } from "../services/embedding.service.js";
+
+
+import Product from "../models/Product";
+import { verifyToken, requireAdmin } from "../middleware/auth";
+import { getOrSetCache, invalidateCatalogCache } from "../middleware/cache";
+import { getEmbedding } from "../services/embedding.service";
 const router = Router();
+
 
 // GET /api/products - Retrieve product list with pagination, sorting, and category filters (Cached)
 router.get("/", async (req: Request, res: Response) => {
@@ -189,7 +192,7 @@ router.get("/:id", async (req: Request, res: Response) => {
   }
 });
 // POST /api/products - Create a new product (Admin Only)
-router.post("/", async (req: Request, res: Response) => {
+router.post("/", verifyToken, requireAdmin, async (req: Request, res: Response) => {
   try {
     const { name, description, price, stock, category, embedding } = req.body;
 
@@ -203,7 +206,7 @@ router.post("/", async (req: Request, res: Response) => {
       price,
       stock,
       category,
-      embedding: embedding || Array(384).fill(0) // Default zero vector if not provided
+      embedding: Array.isArray(embedding) && embedding.length === 384 ? embedding : Array(384).fill(0)
     });
 
     await newProduct.save();

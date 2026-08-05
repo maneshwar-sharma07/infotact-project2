@@ -6,13 +6,33 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const mongoose_1 = __importDefault(require("mongoose"));
 const Order_1 = __importDefault(require("../models/Order"));
+const Product_1 = __importDefault(require("../models/Product"));
 const User_1 = __importDefault(require("../models/User"));
 const auth_1 = require("../middleware/auth");
+const cache_1 = require("../middleware/cache");
+const redisLock_service_1 = require("../services/redisLock.service");
+const socketServer_1 = require("../socket/socketServer");
 const router = (0, express_1.Router)();
 const statuses = ["Pending", "Confirmed", "Packed", "Shipped", "Delivered", "Cancelled"];
-const nextStatus = { Pending: "Confirmed", Confirmed: "Packed", Packed: "Shipped", Shipped: "Delivered" };
-function isValidId(id) { return mongoose_1.default.Types.ObjectId.isValid(id); }
-// GET /api/orders — customers receive their own orders; admins receive all orders.
+const nextStatus = {
+    Pending: "Confirmed",
+    Confirmed: "Packed",
+    Packed: "Shipped",
+    Shipped: "Delivered"
+};
+const isValidId = (id) => mongoose_1.default.Types.ObjectId.isValid(id);
+router.get("/my-orders", auth_1.verifyToken, async (req, res) => {
+    try {
+        const userId = req.user?.id;
+        if (!userId)
+            return res.status(401).json({ error: "Authentication required." });
+        const orders = await Order_1.default.find({ user: userId }).sort({ createdAt: -1 }).limit(200);
+        return res.json({ orders });
+    }
+    catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+});
 router.get("/", auth_1.verifyToken, async (req, res) => {
     try {
         const userId = req.user?.id;
@@ -34,8 +54,9 @@ router.get("/:id", auth_1.verifyToken, async (req, res) => {
         const order = await Order_1.default.findById(orderId);
         if (!order)
             return res.status(404).json({ error: "Order not found." });
-        if (req.user?.role !== "admin" && order.user.toString() !== req.user?.id)
+        if (req.user?.role !== "admin" && order.user.toString() !== req.user?.id) {
             return res.status(403).json({ error: "You can only access your own orders." });
+        }
         return res.json({ order });
     }
     catch (error) {
@@ -43,20 +64,67 @@ router.get("/:id", auth_1.verifyToken, async (req, res) => {
     }
 });
 router.post("/", auth_1.verifyToken, async (req, res) => {
+    const body = req.body;
+    const items = body.items;
+    if (!items?.length || body.totalAmount === undefined || !body.shippingAddress?.trim() || !["Card", "Cash on Delivery"].includes(body.paymentMethod ?? "")) {
+        return res.status(400).json({ error: "Items, total, shipping address, and payment method are required.", code: "ERR_INVALID_REQUEST" });
+    }
+    if (items.some((item) => !isValidId(item.product) || !item.name?.trim() || !Number.isFinite(item.price) || item.price < 0 || !Number.isInteger(item.quantity) || item.quantity < 1)) {
+        return res.status(400).json({ error: "One or more order items are invalid.", code: "ERR_INVALID_REQUEST" });
+    }
+    const paymentMethod = body.paymentMethod;
+    const user = await User_1.default.findById(req.user?.id);
+    if (!user)
+        return res.status(401).json({ error: "Customer account not found." });
+    const productIds = [...new Set(items.map((item) => item.product))];
+    const acquiredLocks = [];
+    const decremented = [];
     try {
-        const { items, totalAmount, shippingAddress, paymentMethod } = req.body;
-        if (!items?.length || totalAmount === undefined || !shippingAddress?.trim() || !["Card", "Cash on Delivery"].includes(paymentMethod || ""))
-            return res.status(400).json({ error: "Items, total, shipping address, and payment method are required." });
-        if (items.some((item) => !isValidId(item.product) || !item.name || item.price < 0 || item.quantity < 1))
-            return res.status(400).json({ error: "One or more order items are invalid." });
-        const user = await User_1.default.findById(req.user?.id);
-        if (!user)
-            return res.status(401).json({ error: "Customer account not found." });
-        const order = await Order_1.default.create({ orderNumber: `SS-${Date.now().toString().slice(-8)}`, user: user._id, customerName: user.name, customerEmail: user.email, items, totalAmount, shippingAddress: shippingAddress.trim(), paymentMethod: paymentMethod, status: "Pending" });
+        for (const productId of productIds) {
+            if (!(await (0, redisLock_service_1.acquireLock)(productId, 5, 5, 100))) {
+                return res.status(409).json({ error: `Server is busy processing item ${productId}. Please try checkout again.`, code: "ERR_LOCK_TIMEOUT", details: { productId } });
+            }
+            acquiredLocks.push(productId);
+        }
+        for (const item of items) {
+            const updated = await Product_1.default.findOneAndUpdate({ _id: item.product, stock: { $gte: item.quantity } }, { $inc: { stock: -item.quantity } }, { new: true });
+            if (!updated) {
+                for (const decrementedItem of decremented)
+                    await Product_1.default.findByIdAndUpdate(decrementedItem.productId, { $inc: { stock: decrementedItem.quantity } });
+                return res.status(400).json({ error: `Insufficient stock for product id ${item.product} or product does not exist.`, code: "ERR_OUT_OF_STOCK", details: { productId: item.product } });
+            }
+            decremented.push({ productId: item.product, quantity: item.quantity });
+        }
+        const orderItems = items.map((item) => ({ ...item, product: new mongoose_1.default.Types.ObjectId(item.product) }));
+        const order = await Order_1.default.create({
+            orderNumber: `SS-${Date.now().toString().slice(-8)}-${Math.floor(Math.random() * 1000).toString().padStart(3, "0")}`,
+            user: user._id,
+            customerName: user.name,
+            customerEmail: user.email,
+            items: orderItems,
+            totalAmount: body.totalAmount,
+            shippingAddress: body.shippingAddress.trim(),
+            paymentMethod,
+            status: "Pending"
+        });
+        for (const productId of productIds) {
+            const product = await Product_1.default.findById(productId);
+            if (product && socketServer_1.io) {
+                socketServer_1.io.emit("stock:update", { productId, stock: product.stock });
+                socketServer_1.io.to(`product:${productId}`).emit("stock:update", { productId, stock: product.stock });
+            }
+        }
+        await (0, cache_1.invalidateCatalogCache)();
         return res.status(201).json({ message: "Order created successfully.", order });
     }
     catch (error) {
-        return res.status(500).json({ error: error.message });
+        for (const item of decremented)
+            await Product_1.default.findByIdAndUpdate(item.productId, { $inc: { stock: item.quantity } }).catch(() => undefined);
+        return res.status(500).json({ error: error.message, code: "ERR_INTERNAL_FAILURE" });
+    }
+    finally {
+        for (const productId of acquiredLocks)
+            await (0, redisLock_service_1.releaseLock)(productId);
     }
 });
 router.patch("/:id/status", auth_1.verifyToken, auth_1.requireAdmin, async (req, res) => {
@@ -70,7 +138,7 @@ router.patch("/:id/status", auth_1.verifyToken, auth_1.requireAdmin, async (req,
         const order = await Order_1.default.findById(orderId);
         if (!order)
             return res.status(404).json({ error: "Order not found." });
-        if (status !== "Cancelled" && order.status !== status && nextStatus[order.status] !== status)
+        if (status !== "Cancelled" && status !== order.status && nextStatus[order.status] !== status)
             return res.status(400).json({ error: "Status must follow the order workflow." });
         order.status = status;
         await order.save();

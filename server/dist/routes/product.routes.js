@@ -171,7 +171,7 @@ router.get("/:id", async (req, res) => {
     }
 });
 // POST /api/products - Create a new product (Admin Only)
-router.post("/", async (req, res) => {
+router.post("/", auth_1.verifyToken, auth_1.requireAdmin, async (req, res) => {
     try {
         const { name, description, price, stock, category, embedding } = req.body;
         if (!name || !description || price === undefined || stock === undefined || !category) {
@@ -183,7 +183,7 @@ router.post("/", async (req, res) => {
             price,
             stock,
             category,
-            embedding: embedding || Array(384).fill(0) // Default zero vector if not provided
+            embedding: Array.isArray(embedding) && embedding.length === 384 ? embedding : Array(384).fill(0)
         });
         await newProduct.save();
         // Evict all stale paginated catalog cache blocks

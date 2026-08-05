@@ -1,4 +1,4 @@
-import { redisClient } from "../config/redis";
+import { redisClient, redisAvailable } from "../config/redis";
 /**
  * Generic cache-aside helper function that wraps database operations with caching and performance logging.
  * @param key Unique cache key string
@@ -11,6 +11,7 @@ export const getOrSetCache = async <T>(
   fetchFunction: () => Promise<T>,
   ttlSeconds: number = 600
 ): Promise<T> => {
+  if (!redisAvailable) return fetchFunction();
   const startTime = performance.now();
 
   try {
@@ -46,6 +47,7 @@ export const getOrSetCache = async <T>(
 
 // Invalidate all cached product catalog queries dynamically (production-safe using SCAN)
 export const invalidateCatalogCache = async (): Promise<void> => {
+  if (!redisAvailable) return;
   try {
     console.log("[Cache] Invalidation triggered. Scanning for keys to evict...");
     let cursor = "0";

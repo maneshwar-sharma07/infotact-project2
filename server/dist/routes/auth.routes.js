@@ -9,12 +9,12 @@ const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const User_1 = __importDefault(require("../models/User"));
 const validate_1 = require("../middleware/validate");
 const router = (0, express_1.Router)();
-const JWT_SECRET = process.env.JWT_SECRET || "your_super_secret_key_min_32_chars";
+const getJwtSecret = () => process.env.JWT_SECRET || "your_super_secret_key_min_32_chars";
 const JWT_EXPIRES_IN = (process.env.JWT_EXPIRES_IN || "7d");
 // POST /auth/register - Register a new user
 router.post("/register", validate_1.validateRegister, async (req, res) => {
     try {
-        const { name, email, password, role } = req.body;
+        const { name, email, password } = req.body;
         if (!name || !email || !password) {
             return res.status(400).json({ error: "Name, email, and password are required" });
         }
@@ -31,11 +31,11 @@ router.post("/register", validate_1.validateRegister, async (req, res) => {
             name,
             email,
             passwordHash,
-            role: role || "customer"
+            role: "customer"
         });
         await newUser.save();
         // Generate JWT token
-        const token = jsonwebtoken_1.default.sign({ id: newUser._id, email: newUser.email, role: newUser.role }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+        const token = jsonwebtoken_1.default.sign({ id: newUser._id.toString(), email: newUser.email, role: newUser.role }, getJwtSecret(), { expiresIn: JWT_EXPIRES_IN });
         return res.status(201).json({
             message: "Registration successful",
             token,
@@ -64,7 +64,7 @@ router.post("/login", validate_1.validateLogin, async (req, res) => {
             return res.status(401).json({ error: "Invalid email or password" });
         }
         // Generate JWT token
-        const token = jsonwebtoken_1.default.sign({ id: user._id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+        const token = jsonwebtoken_1.default.sign({ id: user._id.toString(), email: user.email, role: user.role }, getJwtSecret(), { expiresIn: JWT_EXPIRES_IN });
         return res.json({
             message: "Login successful",
             token,

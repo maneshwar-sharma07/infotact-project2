@@ -7,16 +7,18 @@ exports.redisClient = exports.redisAvailable = void 0;
 const ioredis_1 = require("ioredis");
 const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
-const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
+const REDIS_URL = process.env.REDIS_URL;
 exports.redisAvailable = false;
-exports.redisClient = new ioredis_1.Redis(REDIS_URL, {
+exports.redisClient = new ioredis_1.Redis(REDIS_URL ?? "redis://localhost:6379", {
     lazyConnect: true,
     maxRetriesPerRequest: 1,
-    retryStrategy() {
-        return null;
-    }
+    retryStrategy: () => null
 });
-(async () => {
+const connectRedis = async () => {
+    if (!REDIS_URL) {
+        console.log("[Redis] REDIS_URL not configured. Running without cache.");
+        return;
+    }
     try {
         await exports.redisClient.connect();
         exports.redisAvailable = true;
@@ -26,12 +28,19 @@ exports.redisClient = new ioredis_1.Redis(REDIS_URL, {
         exports.redisAvailable = false;
         console.log("[Redis] Redis not available. Running without cache.");
     }
-})();
-// Optional logging
+};
+void connectRedis();
 exports.redisClient.on("ready", () => {
+    exports.redisAvailable = true;
     console.log("[Redis] Ready");
 });
 exports.redisClient.on("error", () => {
-    // Ignore Redis errors during frontend development
+    exports.redisAvailable = false;
+});
+exports.redisClient.on("end", () => {
+    exports.redisAvailable = false;
+});
+exports.redisClient.on("close", () => {
+    exports.redisAvailable = false;
 });
 //# sourceMappingURL=redis.js.map

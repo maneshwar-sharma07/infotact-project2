@@ -5,7 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.requireAdmin = exports.verifyToken = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-const JWT_SECRET = process.env.JWT_SECRET || "your_super_secret_key_min_32_chars";
+const getJwtSecret = () => process.env.JWT_SECRET || "your_super_secret_key_min_32_chars";
 // Middleware to verify JWT tokens
 const verifyToken = (req, res, next) => {
     try {
@@ -18,8 +18,11 @@ const verifyToken = (req, res, next) => {
             return res.status(401).json({ error: "Access denied. Invalid token format." });
         }
         // Verify token
-        const decoded = jsonwebtoken_1.default.verify(token, JWT_SECRET);
-        req.user = decoded;
+        const decoded = jsonwebtoken_1.default.verify(token, getJwtSecret());
+        if (typeof decoded !== "object" || decoded === null || typeof decoded.id !== "string" || typeof decoded.email !== "string" || (decoded.role !== "admin" && decoded.role !== "customer")) {
+            return res.status(401).json({ error: "Invalid or expired token." });
+        }
+        req.user = { id: decoded.id, email: decoded.email, role: decoded.role };
         next();
     }
     catch (error) {

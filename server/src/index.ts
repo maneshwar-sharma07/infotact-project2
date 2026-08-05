@@ -3,12 +3,11 @@ import type { Request, Response } from "express"; // <-- Use "import type" for T
 import cors from "cors";
 import dotenv from "dotenv";
 import { createServer } from "http"; // <-- Imported HTTP server creator
-import { connectDB } from "./config/db.js";
-import authRoutes from "./routes/auth.routes.js";
-import productRoutes from "./routes/product.routes.js";
-import orderRoutes from "./routes/order.routes.js";
-import { initSocketServer } from "./socket/socketServer.js"; // <-- Imported Socket.IO initialization hook
-
+import { connectDB } from "./config/db";
+import authRoutes from "./routes/auth.routes";
+import productRoutes from "./routes/product.routes";
+import orderRoutes from "./routes/order.routes";
+import { initSocketServer } from "./socket/socketServer";
 // Load environment variables
 dotenv.config();
 
@@ -23,6 +22,7 @@ app.use(cors());
 app.use(express.json());
 
 // Register Routes
+app.use("/api/auth", authRoutes);
 app.use("/auth", authRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/orders", orderRoutes);

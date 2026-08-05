@@ -1,4 +1,4 @@
-import { redisClient } from "../config/redis.js";
+import { redisAvailable, redisClient } from "../config/redis";
 
 /**
  * Helper utility to pause execution for lock retry delays
@@ -21,6 +21,7 @@ export const acquireLock = async (
   retryAttempts: number = 5,
   retryDelayMs: number = 100
 ): Promise<boolean> => {
+  if (!redisAvailable) return true;
   const lockKey = `lock:product:${productId}`;
 
   for (let attempt = 1; attempt <= retryAttempts; attempt++) {
@@ -52,6 +53,7 @@ export const acquireLock = async (
  * @param productId Target product ID to unlock
  */
 export const releaseLock = async (productId: string): Promise<void> => {
+  if (!redisAvailable) return;
   const lockKey = `lock:product:${productId}`;
   try {
     await redisClient.del(lockKey);

@@ -10,6 +10,8 @@ const redis_1 = require("../config/redis");
  * @returns The resolved data (either cached or fresh)
  */
 const getOrSetCache = async (key, fetchFunction, ttlSeconds = 600) => {
+    if (!redis_1.redisAvailable)
+        return fetchFunction();
     const startTime = performance.now();
     try {
         // 1. Attempt to fetch data from Redis
@@ -39,6 +41,8 @@ const getOrSetCache = async (key, fetchFunction, ttlSeconds = 600) => {
 exports.getOrSetCache = getOrSetCache;
 // Invalidate all cached product catalog queries dynamically (production-safe using SCAN)
 const invalidateCatalogCache = async () => {
+    if (!redis_1.redisAvailable)
+        return;
     try {
         console.log("[Cache] Invalidation triggered. Scanning for keys to evict...");
         let cursor = "0";

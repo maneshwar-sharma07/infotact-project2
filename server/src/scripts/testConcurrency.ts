@@ -1,8 +1,10 @@
 import dotenv from "dotenv";
-import { connectDB } from "../config/db.js";
-import { redisClient } from "../config/redis.js";
-import Product from "../models/Product.js";
-import Order from "../models/Order.js";
+import { connectDB } from "../config/db";
+import { redisClient } from "../config/redis";
+import Product from "../models/Product";
+import Order from "../models/Order";
+import { acquireLock, releaseLock } from "../services/redisLock.service";
+
 import mongoose from "mongoose";
 
 dotenv.config();
@@ -40,7 +42,6 @@ const runConcurrencyTest = async () => {
 
     // 2. Simulation checkout function (simulates controller execution flow)
     const checkoutSim = async (buyerName: string) => {
-      const { acquireLock, releaseLock } = await import("../services/redisLock.service.js");
       const quantity = 1;
       let lockAcquired = false;
 
@@ -64,10 +65,15 @@ const runConcurrencyTest = async () => {
 
         // Save order document
         const order = new Order({
+          orderNumber: `TEST-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
           user: mockUserId,
+          customerName: buyerName,
+          customerEmail: `${buyerName.toLowerCase().replace(/\s+/g, ".")}@example.test`,
           items: [{ product: testProduct._id, name: testProduct.name, price: testProduct.price, quantity }],
           totalAmount: testProduct.price * quantity,
-          status: "completed"
+          shippingAddress: "Concurrency test address",
+          paymentMethod: "Card",
+          status: "Pending"
         });
         await order.save();
 
