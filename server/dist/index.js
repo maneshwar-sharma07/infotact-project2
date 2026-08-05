@@ -9,6 +9,7 @@ const dotenv_1 = __importDefault(require("dotenv"));
 const db_1 = require("./config/db");
 const auth_routes_1 = __importDefault(require("./routes/auth.routes"));
 const product_routes_1 = __importDefault(require("./routes/product.routes"));
+const order_routes_1 = __importDefault(require("./routes/order.routes"));
 // Load environment variables
 dotenv_1.default.config();
 const app = (0, express_1.default)();
@@ -19,6 +20,7 @@ app.use(express_1.default.json());
 // Register Routes
 app.use("/auth", auth_routes_1.default);
 app.use("/api/products", product_routes_1.default);
+app.use("/api/orders", order_routes_1.default);
 // Base health endpoint
 app.get("/health", (req, res) => {
     res.json({
