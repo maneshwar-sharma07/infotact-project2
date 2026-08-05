@@ -1,10 +1,9 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
-
-import Product from "../models/Product";
-import { verifyToken, requireAdmin } from "../middleware/auth";
-import { getOrSetCache, invalidateCatalogCache } from "../middleware/cache";
-import { getEmbedding } from "../services/embedding.service";
+import Product from "../models/Product.js";
+import { verifyToken, requireAdmin } from "../middleware/auth.js";
+import { getOrSetCache, invalidateCatalogCache } from "../middleware/cache.js";
+import { getEmbedding } from "../services/embedding.service.js";
 const router = Router();
 
 // GET /api/products - Retrieve product list with pagination, sorting, and category filters (Cached)

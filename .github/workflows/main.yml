@@ -1,0 +1,34 @@
+name: Continuous Integration (CI)
+
+on:
+  push:
+    branches:
+      - main
+      - maneshwar
+  pull_request:
+    branches:
+      - main
+      - maneshwar
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js (v20)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install Dependencies
+        working-directory: ./server
+        run: npm ci
+
+      - name: Verify TypeScript Compilation (Build Check)
+        working-directory: ./server
+        run: npm run build

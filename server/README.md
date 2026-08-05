@@ -193,9 +193,103 @@ Create, update, or delete catalog products. Triggers instant pattern invalidatio
 
 ---
 
+### 🧠 8. AI Semantic Vector Search (Redis Cached)
+Returns semantically relevant products using local Hugging Face feature vectors similarity checks.
+
+* **URL**: `/api/products/semantic-search?query=running+gear`
+* **Method**: `GET`
+* **Query Parameters**:
+  * `query` (required)
+  * `limit` (optional, default: `10`)
+* **Success Response (200 OK)**:
+  ```json
+  {
+    "products": [
+      {
+        "name": "Athletic Socks - Model v42",
+        "description": "Eco-friendly running socks designed for high durability.",
+        "price": 14.99,
+        "stock": 80,
+        "category": "Clothing",
+        "score": 0.825
+      }
+    ],
+    "count": 1,
+    "query": "running gear"
+  }
+  ```
+
+---
+
+### 💳 9. Purchase Checkout (Redis locked + Atomic Mongo Decrement)
+Initialize order checkouts under high-concurrency protection.
+
+* **URL**: `/api/orders`
+* **Method**: `POST`
+* **Headers**: `Authorization: Bearer <JWT_TOKEN>`
+* **Request Body**:
+  ```json
+  {
+    "items": [
+      {
+        "product": "668ffeb03a55cd7820ab9a81",
+        "name": "Wireless Earbuds",
+        "price": 49.99,
+        "quantity": 2
+      }
+    ],
+    "totalAmount": 99.98
+  }
+  ```
+* **Success Response (201 Created)**:
+  ```json
+  {
+    "message": "Order placed and finalized successfully!",
+    "order": {
+      "user": "668ffeb...",
+      "items": [...],
+      "totalAmount": 99.98,
+      "status": "completed",
+      "id": "668ffe...",
+      "createdAt": "2026-07-27T17:30:00.000Z"
+    }
+  }
+  ```
+
+---
+
+### 📋 10. Order History Listing
+Fetch order lists for the logged-in customer.
+
+* **URL**: `/api/orders/my-orders`
+* **Method**: `GET`
+* **Headers**: `Authorization: Bearer <JWT_TOKEN>`
+* **Success Response (200 OK)**: Array of order details objects.
+
+---
+
+## 🚫 Standardized Error Failure Codes
+
+To enable targeted client UX warnings, the checkout endpoint returns structured JSON payloads on transaction failures:
+
+| Code | HTTP Status | Description | payload Details |
+| :--- | :--- | :--- | :--- |
+| `ERR_INVALID_REQUEST` | 400 Bad Request | Payload validation failed (e.g. empty items array). | `{ error: string }` |
+| `ERR_LOCK_TIMEOUT` | 409 Conflict | Failed to acquire Redis mutex lock during concurrent checkout. | `{ error: string, details: { productId } }` |
+| `ERR_OUT_OF_STOCK` | 400 Bad Request | Requested quantity exceeds MongoDB atomic stock balance. | `{ error: string, details: { productId } }` |
+| `ERR_INTERNAL_FAILURE` | 500 Internal Error | Uncaught database crash, triggers rollback on booked stock. | `{ error: string }` |
+
+---
+
 ## ⚡ Cache & Latency Integration Tests
 Run automated benchmark tests to verify Cache Miss, Cache Hit speed target (<50ms), and Cache Invalidation eviction:
 ```bash
 npm run test:cache
 ```
+
+Run automated concurrency simulation tests verifying that locks block double-selling:
+```bash
+npm run test:concurrency
+```
+
 
