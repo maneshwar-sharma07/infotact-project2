@@ -5,6 +5,7 @@ export interface IOrderItem {
     name: string;
     price: number;
     quantity: number;
+    imageUrl?: string;
 }
 export interface IOrder extends Document {
     orderNumber: string;

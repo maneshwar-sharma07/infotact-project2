@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 
-const getJwtSecret = (): string => process.env.JWT_SECRET || "your_super_secret_key_min_32_chars";
+export const getJwtSecret = (): string => process.env.JWT_SECRET || "your_super_secret_key_min_32_chars";
 
 // Extend Express Request namespace globally to include our user object
 declare global {

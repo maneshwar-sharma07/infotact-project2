@@ -6,6 +6,7 @@ export interface IProduct extends Document {
   price: number;
   stock: number;
   category: string;
+  imageUrl?: string;
   embedding: number[]; // Vector representation array (e.g., 384 or 1536 elements)
 }
 
@@ -16,6 +17,7 @@ const ProductSchema = new Schema<IProduct>(
     price: { type: Number, required: true, min: 0 },
     stock: { type: Number, required: true, min: 0 },
     category: { type: String, required: true },
+    imageUrl: { type: String, trim: true },
     embedding: { type: [Number], required: true }
   },
   {

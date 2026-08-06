@@ -194,7 +194,7 @@ router.get("/:id", async (req: Request, res: Response) => {
 // POST /api/products - Create a new product (Admin Only)
 router.post("/", verifyToken, requireAdmin, async (req: Request, res: Response) => {
   try {
-    const { name, description, price, stock, category, embedding } = req.body;
+    const { name, description, price, stock, category, imageUrl, embedding } = req.body;
 
     if (!name || !description || price === undefined || stock === undefined || !category) {
       return res.status(400).json({ error: "Missing required product fields" });
@@ -206,6 +206,7 @@ router.post("/", verifyToken, requireAdmin, async (req: Request, res: Response) 
       price,
       stock,
       category,
+      imageUrl,
       embedding: Array.isArray(embedding) && embedding.length === 384 ? embedding : Array(384).fill(0)
     });
 

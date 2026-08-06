@@ -5,6 +5,7 @@ export interface IProduct extends Document {
     price: number;
     stock: number;
     category: string;
+    imageUrl?: string;
     embedding: number[];
 }
 declare const _default: mongoose.Model<IProduct, {}, {}, {}, mongoose.Document<unknown, {}, IProduct, {}, mongoose.DefaultSchemaOptions> & IProduct & Required<{

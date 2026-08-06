@@ -7,16 +7,10 @@ import User from "../models/User";
 import { requireAdmin, verifyToken } from "../middleware/auth";
 import { invalidateCatalogCache } from "../middleware/cache";
 import { acquireLock, releaseLock } from "../services/redisLock.service";
-import { io } from "../socket/socketServer";
+import { emitOrderUpdate, io } from "../socket/socketServer";
 
 const router = Router();
 const statuses: OrderStatus[] = ["Pending", "Confirmed", "Packed", "Shipped", "Delivered", "Cancelled"];
-const nextStatus: Partial<Record<OrderStatus, OrderStatus>> = {
-  Pending: "Confirmed",
-  Confirmed: "Packed",
-  Packed: "Shipped",
-  Shipped: "Delivered"
-};
 
 const isValidId = (id: string): boolean => mongoose.Types.ObjectId.isValid(id);
 
@@ -60,16 +54,15 @@ router.get("/:id", verifyToken, async (req: Request, res: Response) => {
 
 router.post("/", verifyToken, async (req: Request, res: Response) => {
   const body = req.body as {
-    items?: Array<{ product: string; name: string; price: number; quantity: number }>;
-    totalAmount?: number;
+    items?: Array<{ product: string; name: string; price: number; quantity: number; imageUrl?: string }>;
     shippingAddress?: string;
     paymentMethod?: string;
   };
   const items = body.items;
-  if (!items?.length || body.totalAmount === undefined || !body.shippingAddress?.trim() || !["Card", "Cash on Delivery"].includes(body.paymentMethod ?? "")) {
-    return res.status(400).json({ error: "Items, total, shipping address, and payment method are required.", code: "ERR_INVALID_REQUEST" });
+  if (!items?.length || !body.shippingAddress?.trim() || !["Card", "Cash on Delivery"].includes(body.paymentMethod ?? "")) {
+    return res.status(400).json({ error: "Items, shipping address, and payment method are required.", code: "ERR_INVALID_REQUEST" });
   }
-  if (items.some((item) => !isValidId(item.product) || !item.name?.trim() || !Number.isFinite(item.price) || item.price < 0 || !Number.isInteger(item.quantity) || item.quantity < 1)) {
+  if (items.some((item) => !isValidId(item.product) || !Number.isInteger(item.quantity) || item.quantity < 1)) {
     return res.status(400).json({ error: "One or more order items are invalid.", code: "ERR_INVALID_REQUEST" });
   }
   const paymentMethod = body.paymentMethod as "Card" | "Cash on Delivery";
@@ -80,6 +73,7 @@ router.post("/", verifyToken, async (req: Request, res: Response) => {
   const productIds = [...new Set(items.map((item) => item.product))];
   const acquiredLocks: string[] = [];
   const decremented: Array<{ productId: string; quantity: number }> = [];
+  const orderItems: IOrderItem[] = [];
   try {
     for (const productId of productIds) {
       if (!(await acquireLock(productId, 5, 5, 100))) {
@@ -95,16 +89,16 @@ router.post("/", verifyToken, async (req: Request, res: Response) => {
         return res.status(400).json({ error: `Insufficient stock for product id ${item.product} or product does not exist.`, code: "ERR_OUT_OF_STOCK", details: { productId: item.product } });
       }
       decremented.push({ productId: item.product, quantity: item.quantity });
+      orderItems.push({ product: updated._id, name: updated.name, price: updated.price, quantity: item.quantity, ...(updated.imageUrl ? { imageUrl: updated.imageUrl } : {}) });
     }
 
-    const orderItems: IOrderItem[] = items.map((item) => ({ ...item, product: new mongoose.Types.ObjectId(item.product) }));
     const order = await Order.create({
       orderNumber: `SS-${Date.now().toString().slice(-8)}-${Math.floor(Math.random() * 1000).toString().padStart(3, "0")}`,
       user: user._id,
       customerName: user.name,
       customerEmail: user.email,
       items: orderItems,
-      totalAmount: body.totalAmount,
+      totalAmount: orderItems.reduce((total, item) => total + (item.price * item.quantity), 0),
       shippingAddress: body.shippingAddress.trim(),
       paymentMethod,
       status: "Pending"
@@ -135,9 +129,9 @@ router.patch("/:id/status", verifyToken, requireAdmin, async (req: Request, res:
     if (!statuses.includes(status)) return res.status(400).json({ error: "Invalid order status." });
     const order = await Order.findById(orderId);
     if (!order) return res.status(404).json({ error: "Order not found." });
-    if (status !== "Cancelled" && status !== order.status && nextStatus[order.status] !== status) return res.status(400).json({ error: "Status must follow the order workflow." });
     order.status = status;
     await order.save();
+    emitOrderUpdate(order);
     return res.json({ message: "Order status updated.", order });
   } catch (error) {
     return res.status(500).json({ error: (error as Error).message });

@@ -23,7 +23,7 @@ export default function CheckoutPage() {
     if (!address.trim()) { notify("Please enter your shipping address.", "error"); return; }
     setSaving(true);
     try {
-      const response = await api.post<{ order: { id: string } }>("/orders", { items: items.map((item) => ({ product: item.id, name: item.name, price: item.price, quantity: item.quantity })), totalAmount: total, shippingAddress: address, paymentMethod: payment });
+      const response = await api.post<{ order: { id: string } }>("/orders", { items: items.map((item) => ({ product: item.id, name: item.name, price: item.price, quantity: item.quantity, imageUrl: item.imageUrl })), totalAmount: total, shippingAddress: address, paymentMethod: payment });
       clearCart(); notify("Order placed successfully."); navigate(`/orders/${response.data.order.id}`);
     } catch { notify("We could not place your order. Please try again.", "error"); }
     finally { setSaving(false); }

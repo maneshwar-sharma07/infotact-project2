@@ -40,6 +40,7 @@ const ProductSchema = new mongoose_1.Schema({
     price: { type: Number, required: true, min: 0 },
     stock: { type: Number, required: true, min: 0 },
     category: { type: String, required: true },
+    imageUrl: { type: String, trim: true },
     embedding: { type: [Number], required: true }
 }, {
     timestamps: true

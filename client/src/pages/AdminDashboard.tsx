@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent, type Re
 import axios from "axios";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import api from "../services/api";
+import { subscribeToOrderUpdates } from "../services/orderSocket";
 import type { ApiOrder, OrderStatus } from "../types/ecommerce";
 
 type Product = { id: string; name: string; description: string; price: number; stock: number; category: string; createdAt?: string };
@@ -47,6 +48,7 @@ export default function AdminDashboard() {
   };
 
   useEffect(() => { void loadProducts(); }, []);
+  useEffect(() => subscribeToOrderUpdates((updated) => setOrders((current) => current.map((order) => order.id === updated.id ? updated : order))), []);
   useEffect(() => {
     if (!productId) return;
     const loadProduct = async () => {
@@ -124,9 +126,9 @@ function ProductList({ products, emptyMessage, showStock = false }: { products: 
 function EmptyPanel({ message, icon }: { message: string; icon?: ReactNode }) { return <div className="flex min-h-40 flex-col items-center justify-center rounded-xl border border-dashed border-white/10 px-4 text-center"><span className="mb-3 text-slate-600">{icon ?? <BoxIcon />}</span><p className="text-sm text-slate-500">{message}</p></div>; }
 function StatusBadge({ status }: { status: string }) { const colors: Record<string, string> = { Pending: "bg-yellow-400/10 text-yellow-200", Confirmed: "bg-blue-400/10 text-blue-300", Packed: "bg-orange-400/10 text-orange-300", Shipped: "bg-purple-400/10 text-purple-300", Delivered: "bg-emerald-400/10 text-emerald-300", Cancelled: "bg-red-400/10 text-red-300" }; return <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${colors[status] ?? "bg-white/10 text-slate-300"}`}>{status}</span>; }
 function AdminOrderRow({ order, onUpdated }: { order: ApiOrder; onUpdated: (order: ApiOrder) => void }) {
-  const next: Partial<Record<OrderStatus, OrderStatus>> = { Pending: "Confirmed", Confirmed: "Packed", Packed: "Shipped", Shipped: "Delivered" };
-  const updateStatus = async (status: OrderStatus) => { try { const response = await api.patch<{ order: ApiOrder }>(`/orders/${order.id}/status`, { status }); onUpdated(response.data.order); } catch { /* the dashboard keeps the existing row when an update is rejected */ } };
-  return <tr className="transition hover:bg-white/[0.02]"><td className="px-2 py-4 font-semibold text-slate-200">{order.orderNumber}</td><td className="px-2 py-4 text-slate-300">{order.customerName}</td><td className="px-2 py-4 text-slate-500">{order.customerEmail}</td><td className="px-2 py-4 text-right font-semibold text-white">{money(order.totalAmount)}</td><td className="px-2 py-4 text-slate-400">{order.paymentMethod}</td><td className="px-2 py-4"><StatusBadge status={order.status} /></td><td className="px-2 py-4 text-slate-400">{formatDate(order.createdAt)}</td><td className="px-2 py-4 text-right"><Link to={`/orders/${order.id}`} className="text-xs font-semibold text-slate-300 hover:text-white">View</Link>{next[order.status] && <button type="button" onClick={() => void updateStatus(next[order.status] as OrderStatus)} className="ml-3 text-xs font-semibold text-cyan-300 hover:text-cyan-200">Mark {next[order.status]}</button>}{order.status !== "Cancelled" && order.status !== "Delivered" && <button type="button" onClick={() => void updateStatus("Cancelled")} className="ml-3 text-xs font-semibold text-red-300 hover:text-red-200">Cancel</button>}</td></tr>;
+  const [updating, setUpdating] = useState(false);
+  const updateStatus = async (status: OrderStatus) => { if (status === order.status) return; setUpdating(true); try { const response = await api.patch<{ order: ApiOrder }>(`/orders/${order.id}/status`, { status }); onUpdated(response.data.order); } finally { setUpdating(false); } };
+  return <tr className="transition hover:bg-white/[0.02]"><td className="px-2 py-4 font-semibold text-slate-200">{order.orderNumber}</td><td className="px-2 py-4 text-slate-300">{order.customerName}</td><td className="px-2 py-4 text-slate-500">{order.customerEmail}</td><td className="px-2 py-4 text-right font-semibold text-white">{money(order.totalAmount)}</td><td className="px-2 py-4 text-slate-400">{order.paymentMethod}</td><td className="px-2 py-4"><StatusBadge status={order.status} /></td><td className="px-2 py-4 text-slate-400">{formatDate(order.createdAt)}</td><td className="px-2 py-4 text-right"><div className="flex items-center justify-end gap-3"><Link to={`/orders/${order.id}`} className="text-xs font-semibold text-slate-300 hover:text-white">View</Link><select aria-label={`Update status for ${order.orderNumber}`} value={order.status} disabled={updating} onChange={(event) => void updateStatus(event.target.value as OrderStatus)} className="rounded-lg border border-cyan-400/30 bg-[#0b0b12] px-2 py-1.5 text-xs font-semibold text-cyan-200 outline-none focus:border-cyan-300 disabled:opacity-50">{(["Pending", "Confirmed", "Packed", "Shipped", "Delivered", "Cancelled"] as OrderStatus[]).map((status) => <option key={status} value={status}>{status}</option>)}</select></div></td></tr>;
 }
 function Spinner({ small = false }: { small?: boolean }) { return <span className={`${small ? "h-4 w-4 border-2" : "h-9 w-9 border-4"} animate-spin rounded-full border-white border-t-transparent`} aria-label="Loading" />; }
 function RefreshIcon() { return <svg aria-hidden="true" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 11a8.1 8.1 0 0 0-14.9-4L3 10m0 0V4m0 6h6M4 13a8.1 8.1 0 0 0 14.9 4L21 14m0 0v6m0-6h-6" /></svg>; }

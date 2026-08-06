@@ -38,7 +38,8 @@ const OrderItemSchema = new mongoose_1.Schema({
     product: { type: mongoose_1.Schema.Types.ObjectId, ref: "Product", required: true },
     name: { type: String, required: true, trim: true },
     price: { type: Number, required: true, min: 0 },
-    quantity: { type: Number, required: true, min: 1 }
+    quantity: { type: Number, required: true, min: 1 },
+    imageUrl: { type: String, trim: true }
 }, { _id: false });
 const OrderSchema = new mongoose_1.Schema({
     orderNumber: { type: String, required: true, unique: true, index: true },

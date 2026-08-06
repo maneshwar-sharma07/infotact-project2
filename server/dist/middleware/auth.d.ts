@@ -1,4 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
+export declare const getJwtSecret: () => string;
 declare global {
     namespace Express {
         interface Request {
