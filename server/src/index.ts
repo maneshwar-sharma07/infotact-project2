@@ -26,7 +26,7 @@ app.use(cors({
 app.use(express.json());
 
 // Register Routes
-app.use("/auth", authRoutes);
+app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/orders", orderRoutes);
 
