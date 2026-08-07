@@ -107,7 +107,7 @@ export default function HomePage() {
     const loadProducts = async () => {
       try {
         const response = await api.get<{ products?: HomeProduct[] }>("/products");
-        setBackendProducts(withPlaceholderImages(response.data.products ?? []));
+        setBackendProducts(response.data.products ?? []);
       } catch {
         setError("We couldn't load the live collection. Showing our curated picks instead.");
       } finally {
@@ -117,7 +117,10 @@ export default function HomePage() {
     void loadProducts();
   }, []);
 
-  const products = useMemo(() => backendProducts.length < 8 ? [...backendProducts, ...DEMO_PRODUCTS] : backendProducts, [backendProducts]);
+  const products = useMemo(() => {
+    const rawList = backendProducts.length < 8 ? [...backendProducts, ...DEMO_PRODUCTS] : backendProducts;
+    return withPlaceholderImages(rawList);
+  }, [backendProducts]);
   const categories = useMemo(() => Array.from(new Set(["Electronics", "Accessories", "Fashion", "Books", ...products.map((product) => product.category)])).sort(), [products]);
   const filteredProducts = useMemo(() => {
     const query = search.trim().toLowerCase();
