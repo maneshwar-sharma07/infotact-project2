@@ -7,21 +7,81 @@ import type { Product } from "../components/catalog/ProductCard";
 type PriceRange = "all" | "under-500" | "500-1000" | "over-1000";
 type Availability = "all" | "in-stock" | "out-of-stock";
 
-const productImages = [
-  "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?auto=format&fit=crop&w=900&q=85",
-  "https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=900&q=85",
-  "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=900&q=85",
-  "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=900&q=85",
-  "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=900&q=85",
-  "https://images.unsplash.com/photo-1546868871-7041f2a55e12?auto=format&fit=crop&w=900&q=85",
-  "https://images.unsplash.com/photo-1625842268584-8f3296236761?auto=format&fit=crop&w=900&q=85",
-  "https://images.unsplash.com/photo-1598550476439-6847785fcea6?auto=format&fit=crop&w=900&q=85",
-];
+const nounImages: Record<string, string> = {
+  // Electronics
+  "wireless earbuds": "https://images.unsplash.com/photo-1606220945770-b5b6c2c55bf1?w=600&auto=format&fit=crop&q=80",
+  "smart watch": "https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=600&auto=format&fit=crop&q=80",
+  "bluetooth speaker": "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=600&auto=format&fit=crop&q=80",
+  "charging dock": "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=600&auto=format&fit=crop&q=80",
+  "phone case": "https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=600&auto=format&fit=crop&q=80",
+  "led monitor": "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=600&auto=format&fit=crop&q=80",
+  "mechanical keyboard": "https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=600&auto=format&fit=crop&q=80",
+
+  // Clothing
+  "winter hooded jacket": "https://images.unsplash.com/photo-1598550476439-6847785fcea6?w=600&auto=format&fit=crop&q=80",
+  "cotton t-shirt": "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=600&auto=format&fit=crop&q=80",
+  "running shoes": "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&auto=format&fit=crop&q=80",
+  "athletic socks": "https://images.unsplash.com/photo-1582966772680-860e372bb558?w=600&auto=format&fit=crop&q=80",
+  "leather belt": "https://images.unsplash.com/photo-1624222247344-550fb8ecf7db?w=600&auto=format&fit=crop&q=80",
+  "denim jeans": "https://images.unsplash.com/photo-1542272604-787c3835535d?w=600&auto=format&fit=crop&q=80",
+  "woolen beanie": "https://images.unsplash.com/photo-1576871337622-98d48d4aa53e?w=600&auto=format&fit=crop&q=80",
+
+  // Home & Kitchen
+  "coffee maker": "https://images.unsplash.com/photo-1517256064527-09c53b2d0bc6?w=600&auto=format&fit=crop&q=80",
+  "air fryer": "https://images.unsplash.com/photo-1621972750749-0fbb1abb7736?w=600&auto=format&fit=crop&q=80",
+  "vacuum cleaner": "https://images.unsplash.com/photo-1558317374-067fb5f30001?w=600&auto=format&fit=crop&q=80",
+  "non-stick skillet": "https://images.unsplash.com/photo-1584269600464-37b1b58a9fe7?w=600&auto=format&fit=crop&q=80",
+  "food blender": "https://images.unsplash.com/photo-1578643463396-0997cb5328c1?w=600&auto=format&fit=crop&q=80",
+  "water purifier": "https://images.unsplash.com/photo-1617196034183-421b4917c92d?w=600&auto=format&fit=crop&q=80",
+  "silicone spatula set": "https://images.unsplash.com/photo-1590794056226-79ef3a8147e1?w=600&auto=format&fit=crop&q=80",
+
+  // Books
+  "mystery novel": "https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=600&auto=format&fit=crop&q=80",
+  "sci-fi trilogy": "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=600&auto=format&fit=crop&q=80",
+  "self-help journal": "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=600&auto=format&fit=crop&q=80",
+  "cooking masterclass": "https://images.unsplash.com/photo-1506880018603-83d5b814b5a6?w=600&auto=format&fit=crop&q=80",
+  "coding handbook": "https://images.unsplash.com/photo-1515879218367-8466d910aaa4?w=600&auto=format&fit=crop&q=80",
+  "history encyclopedia": "https://images.unsplash.com/photo-1509021436665-8f07dbf5bf1d?w=600&auto=format&fit=crop&q=80",
+
+  // Sports & Outdoors
+  "camping tent": "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=600&auto=format&fit=crop&q=80",
+  "waterproof backpack": "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=600&auto=format&fit=crop&q=80",
+  "yoga mat": "https://images.unsplash.com/photo-1592432678016-e910b452f9a2?w=600&auto=format&fit=crop&q=80",
+  "dumbbell set": "https://images.unsplash.com/photo-1638536532686-d610adfc8e5c?w=600&auto=format&fit=crop&q=80",
+  "sleeping bag": "https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?w=600&auto=format&fit=crop&q=80",
+  "bicycle helmet": "https://images.unsplash.com/photo-1557166983-5939644443a0?w=600&auto=format&fit=crop&q=80",
+  "hiking poles": "https://images.unsplash.com/photo-1582201942988-13e60e4556ee?w=600&auto=format&fit=crop&q=80",
+
+  // Beauty & Care
+  "face moisturizer": "https://images.unsplash.com/photo-1608248597279-f99d160bfcbc?w=600&auto=format&fit=crop&q=80",
+  "sunscreen lotion": "https://images.unsplash.com/photo-1526947425960-945c6e72858f?w=600&auto=format&fit=crop&q=80",
+  "hair dryer": "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=600&auto=format&fit=crop&q=80",
+  "organic shampoo": "https://images.unsplash.com/photo-1535585209827-a15fcdbc4c2d?w=600&auto=format&fit=crop&q=80",
+  "electric toothbrush": "https://images.unsplash.com/photo-1609840114035-3c981b782dfe?w=600&auto=format&fit=crop&q=80",
+  "beard oil": "https://images.unsplash.com/photo-1626015276681-285a6607b0f7?w=600&auto=format&fit=crop&q=80"
+};
+
+function getSahiProductImage(productName: string, category: string): string {
+  const nameLower = productName.toLowerCase();
+
+  // 1. Search seeded dictionary for exact match
+  for (const [nounKey, imageUrl] of Object.entries(nounImages)) {
+    if (nameLower.includes(nounKey)) {
+      return imageUrl;
+    }
+  }
+
+  // 2. Fallback to loremflickr dynamic query for custom added products
+  let cleanName = productName.split("-")[0] || productName;
+  cleanName = cleanName.trim().toLowerCase();
+  const keywords = cleanName.replace(/\s+/g, ",");
+  return `https://loremflickr.com/600/400/${encodeURIComponent(keywords)}`;
+}
 
 function withPlaceholderImages(products: Product[]): Product[] {
-  return products.map((product, index) => ({
+  return products.map((product) => ({
     ...product,
-    imageUrl: product.imageUrl || productImages[index % productImages.length],
+    imageUrl: product.imageUrl || getSahiProductImage(product.name, product.category),
   }));
 }
 
@@ -35,23 +95,39 @@ export default function CatalogPage() {
   const [availability, setAvailability] = useState<Availability>("all");
   const [minimumRating, setMinimumRating] = useState(0);
   const [sort, setSort] = useState("newest");
+  const [isAiSearch, setIsAiSearch] = useState(false);
   const [newsletterEmail, setNewsletterEmail] = useState("");
   const [newsletterMessage, setNewsletterMessage] = useState("");
 
   useEffect(() => {
-    const loadProducts = async () => {
+    const fetchSearchedProducts = async () => {
+      setLoading(true);
+      setError("");
       try {
-        const response = await api.get<{ products?: Product[] }>("/products");
-        setProducts(withPlaceholderImages(response.data.products ?? []));
-      } catch {
-        setError("We couldn't load the catalog. Please try again shortly.");
+        const query = search.trim();
+        if (!query) {
+          const response = await api.get<{ products?: Product[] }>("/products");
+          setProducts(withPlaceholderImages(response.data.products ?? []));
+        } else if (isAiSearch) {
+          const response = await api.get<{ products?: Product[] }>(`/products/semantic-search?query=${encodeURIComponent(query)}`);
+          setProducts(withPlaceholderImages(response.data.products ?? []));
+        } else {
+          const response = await api.get<{ products?: Product[] }>(`/products/search/keyword?query=${encodeURIComponent(query)}`);
+          setProducts(withPlaceholderImages(response.data.products ?? []));
+        }
+      } catch (err) {
+        setError("We couldn't load search results. Please verify the backend is online.");
       } finally {
         setLoading(false);
       }
     };
 
-    void loadProducts();
-  }, []);
+    const delayDebounce = setTimeout(() => {
+      void fetchSearchedProducts();
+    }, 450);
+
+    return () => clearTimeout(delayDebounce);
+  }, [search, isAiSearch]);
 
   const categories = useMemo(
     () => Array.from(new Set(["Electronics", "Fashion", "Books", "Accessories", ...products.map((product) => product.category)])).sort(),
@@ -59,15 +135,13 @@ export default function CatalogPage() {
   );
 
   const filteredProducts = useMemo(() => {
-    const query = search.trim().toLowerCase();
     return [...products]
       .filter((product) => category === "all" || product.category === category)
-      .filter((product) => !query || `${product.name} ${product.description} ${product.category}`.toLowerCase().includes(query))
       .filter((product) => priceRange === "all" || (priceRange === "under-500" && product.price < 500) || (priceRange === "500-1000" && product.price >= 500 && product.price <= 1000) || (priceRange === "over-1000" && product.price > 1000))
       .filter((product) => availability === "all" || (availability === "in-stock" && product.stock > 0) || (availability === "out-of-stock" && product.stock === 0))
       .filter(() => minimumRating === 0 || 4.8 >= minimumRating)
       .sort((first, second) => sort === "price_asc" ? first.price - second.price : sort === "price_desc" ? second.price - first.price : 0);
-  }, [availability, category, minimumRating, priceRange, products, search, sort]);
+  }, [availability, category, minimumRating, priceRange, products, sort]);
 
   const bestSellers = products.slice(0, 4);
   const newArrivals = [...products].slice(-4).reverse();
@@ -88,6 +162,18 @@ export default function CatalogPage() {
           <aside className="h-fit rounded-2xl border border-gray-800 bg-[#111118] p-5 lg:sticky lg:top-24">
             <div className="flex items-center justify-between"><h2 className="text-lg font-bold">Filters</h2><button onClick={resetFilters} type="button" className="text-sm font-semibold text-cyan-400 transition hover:text-cyan-300">Reset</button></div>
             <label className="mt-5 block text-sm font-medium text-gray-300">Search<input value={search} onChange={(event) => setSearch(event.target.value)} type="search" placeholder="Search products" className="mt-2 w-full rounded-xl border border-gray-700 bg-[#0A0A0F] px-3 py-2.5 text-sm text-white placeholder:text-gray-500 focus:border-cyan-400 focus:outline-none" /></label>
+            
+            {/* AI Search Mode Toggle */}
+            <div className="mt-4 flex items-center justify-between rounded-xl border border-purple-500/20 bg-purple-500/5 p-3">
+              <span className="text-xs font-semibold text-purple-200">✨ AI Semantic Search</span>
+              <button
+                type="button"
+                onClick={() => setIsAiSearch(!isAiSearch)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition duration-300 focus:outline-none ${isAiSearch ? "bg-gradient-to-r from-purple-600 to-cyan-500" : "bg-gray-700"}`}
+              >
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition duration-300 ${isAiSearch ? "translate-x-6" : "translate-x-1"}`} />
+              </button>
+            </div>
             <FilterGroup title="Categories">{categories.map((item) => <FilterButton key={item} active={category === item} onClick={() => setCategory(category === item ? "all" : item)}>{item}</FilterButton>)}</FilterGroup>
             <FilterGroup title="Price Range"><FilterButton active={priceRange === "under-500"} onClick={() => setPriceRange("under-500")}>₹0 – ₹500</FilterButton><FilterButton active={priceRange === "500-1000"} onClick={() => setPriceRange("500-1000")}>₹500 – ₹1000</FilterButton><FilterButton active={priceRange === "over-1000"} onClick={() => setPriceRange("over-1000")}>₹1000+</FilterButton></FilterGroup>
             <FilterGroup title="Rating"><FilterButton active={minimumRating === 5} onClick={() => setMinimumRating(5)}>★★★★★</FilterButton><FilterButton active={minimumRating === 4} onClick={() => setMinimumRating(4)}>★★★★☆ & up</FilterButton><FilterButton active={minimumRating === 3} onClick={() => setMinimumRating(3)}>★★★☆☆ & up</FilterButton></FilterGroup>
