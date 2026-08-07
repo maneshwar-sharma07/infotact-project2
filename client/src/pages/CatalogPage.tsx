@@ -35,23 +35,39 @@ export default function CatalogPage() {
   const [availability, setAvailability] = useState<Availability>("all");
   const [minimumRating, setMinimumRating] = useState(0);
   const [sort, setSort] = useState("newest");
+  const [isAiSearch, setIsAiSearch] = useState(false);
   const [newsletterEmail, setNewsletterEmail] = useState("");
   const [newsletterMessage, setNewsletterMessage] = useState("");
 
   useEffect(() => {
-    const loadProducts = async () => {
+    const fetchSearchedProducts = async () => {
+      setLoading(true);
+      setError("");
       try {
-        const response = await api.get<{ products?: Product[] }>("/products");
-        setProducts(withPlaceholderImages(response.data.products ?? []));
-      } catch {
-        setError("We couldn't load the catalog. Please try again shortly.");
+        const query = search.trim();
+        if (!query) {
+          const response = await api.get<{ products?: Product[] }>("/products");
+          setProducts(withPlaceholderImages(response.data.products ?? []));
+        } else if (isAiSearch) {
+          const response = await api.get<{ products?: Product[] }>(`/products/semantic-search?query=${encodeURIComponent(query)}`);
+          setProducts(withPlaceholderImages(response.data.products ?? []));
+        } else {
+          const response = await api.get<{ products?: Product[] }>(`/products/search/keyword?query=${encodeURIComponent(query)}`);
+          setProducts(withPlaceholderImages(response.data.products ?? []));
+        }
+      } catch (err) {
+        setError("We couldn't load search results. Please verify the backend is online.");
       } finally {
         setLoading(false);
       }
     };
 
-    void loadProducts();
-  }, []);
+    const delayDebounce = setTimeout(() => {
+      void fetchSearchedProducts();
+    }, 450);
+
+    return () => clearTimeout(delayDebounce);
+  }, [search, isAiSearch]);
 
   const categories = useMemo(
     () => Array.from(new Set(["Electronics", "Fashion", "Books", "Accessories", ...products.map((product) => product.category)])).sort(),
@@ -59,15 +75,13 @@ export default function CatalogPage() {
   );
 
   const filteredProducts = useMemo(() => {
-    const query = search.trim().toLowerCase();
     return [...products]
       .filter((product) => category === "all" || product.category === category)
-      .filter((product) => !query || `${product.name} ${product.description} ${product.category}`.toLowerCase().includes(query))
       .filter((product) => priceRange === "all" || (priceRange === "under-500" && product.price < 500) || (priceRange === "500-1000" && product.price >= 500 && product.price <= 1000) || (priceRange === "over-1000" && product.price > 1000))
       .filter((product) => availability === "all" || (availability === "in-stock" && product.stock > 0) || (availability === "out-of-stock" && product.stock === 0))
       .filter(() => minimumRating === 0 || 4.8 >= minimumRating)
       .sort((first, second) => sort === "price_asc" ? first.price - second.price : sort === "price_desc" ? second.price - first.price : 0);
-  }, [availability, category, minimumRating, priceRange, products, search, sort]);
+  }, [availability, category, minimumRating, priceRange, products, sort]);
 
   const bestSellers = products.slice(0, 4);
   const newArrivals = [...products].slice(-4).reverse();
@@ -88,6 +102,18 @@ export default function CatalogPage() {
           <aside className="h-fit rounded-2xl border border-gray-800 bg-[#111118] p-5 lg:sticky lg:top-24">
             <div className="flex items-center justify-between"><h2 className="text-lg font-bold">Filters</h2><button onClick={resetFilters} type="button" className="text-sm font-semibold text-cyan-400 transition hover:text-cyan-300">Reset</button></div>
             <label className="mt-5 block text-sm font-medium text-gray-300">Search<input value={search} onChange={(event) => setSearch(event.target.value)} type="search" placeholder="Search products" className="mt-2 w-full rounded-xl border border-gray-700 bg-[#0A0A0F] px-3 py-2.5 text-sm text-white placeholder:text-gray-500 focus:border-cyan-400 focus:outline-none" /></label>
+            
+            {/* AI Search Mode Toggle */}
+            <div className="mt-4 flex items-center justify-between rounded-xl border border-purple-500/20 bg-purple-500/5 p-3">
+              <span className="text-xs font-semibold text-purple-200">✨ AI Semantic Search</span>
+              <button
+                type="button"
+                onClick={() => setIsAiSearch(!isAiSearch)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition duration-300 focus:outline-none ${isAiSearch ? "bg-gradient-to-r from-purple-600 to-cyan-500" : "bg-gray-700"}`}
+              >
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition duration-300 ${isAiSearch ? "translate-x-6" : "translate-x-1"}`} />
+              </button>
+            </div>
             <FilterGroup title="Categories">{categories.map((item) => <FilterButton key={item} active={category === item} onClick={() => setCategory(category === item ? "all" : item)}>{item}</FilterButton>)}</FilterGroup>
             <FilterGroup title="Price Range"><FilterButton active={priceRange === "under-500"} onClick={() => setPriceRange("under-500")}>₹0 – ₹500</FilterButton><FilterButton active={priceRange === "500-1000"} onClick={() => setPriceRange("500-1000")}>₹500 – ₹1000</FilterButton><FilterButton active={priceRange === "over-1000"} onClick={() => setPriceRange("over-1000")}>₹1000+</FilterButton></FilterGroup>
             <FilterGroup title="Rating"><FilterButton active={minimumRating === 5} onClick={() => setMinimumRating(5)}>★★★★★</FilterButton><FilterButton active={minimumRating === 4} onClick={() => setMinimumRating(4)}>★★★★☆ & up</FilterButton><FilterButton active={minimumRating === 3} onClick={() => setMinimumRating(3)}>★★★☆☆ & up</FilterButton></FilterGroup>
