@@ -13,6 +13,20 @@ const TESTIMONIALS = [
 
 const BRAND_NAMES = ["Apple", "Samsung", "Dell", "HP", "Logitech", "Asus"] as const;
 
+function getSahiProductImage(productName: string, category: string): string {
+  let cleanName = productName.split("-")[0] || productName;
+  cleanName = cleanName.trim().toLowerCase();
+  const keywords = cleanName.replace(/\s+/g, ",");
+  return `https://images.unsplash.com/featured/?${encodeURIComponent(keywords)},${encodeURIComponent(category.toLowerCase())}`;
+}
+
+function withPlaceholderImages(products: HomeProduct[]): HomeProduct[] {
+  return products.map((product) => ({
+    ...product,
+    imageUrl: product.imageUrl || getSahiProductImage(product.name, product.category),
+  }));
+}
+
 export default function HomePage() {
   const [backendProducts, setBackendProducts] = useState<HomeProduct[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,7 +43,7 @@ export default function HomePage() {
     const loadProducts = async () => {
       try {
         const response = await api.get<{ products?: HomeProduct[] }>("/products");
-        setBackendProducts(response.data.products ?? []);
+        setBackendProducts(withPlaceholderImages(response.data.products ?? []));
       } catch {
         setError("We couldn't load the live collection. Showing our curated picks instead.");
       } finally {

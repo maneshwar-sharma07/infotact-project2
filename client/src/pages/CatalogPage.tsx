@@ -7,75 +7,20 @@ import type { Product } from "../components/catalog/ProductCard";
 type PriceRange = "all" | "under-500" | "500-1000" | "over-1000";
 type Availability = "all" | "in-stock" | "out-of-stock";
 
-const categoryImages: Record<string, string[]> = {
-  electronics: [
-    "https://images.unsplash.com/photo-1546868871-7041f2a55e12?auto=format&fit=crop&w=600&q=80", // Smart Watch
-    "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80", // Headphone
-    "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=600&q=80", // Laptop
-    "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=600&q=80"  // Monitor
-  ],
-  fashion: [
-    "https://images.unsplash.com/photo-1598550476439-6847785fcea6?auto=format&fit=crop&w=600&q=80", // Leather Jacket
-    "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?auto=format&fit=crop&w=600&q=80", // Shoes
-    "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=600&q=80", // T-Shirt
-    "https://images.unsplash.com/photo-1582966772680-860e372bb558?auto=format&fit=crop&w=600&q=80"  // Clothing
-  ],
-  clothing: [
-    "https://images.unsplash.com/photo-1598550476439-6847785fcea6?auto=format&fit=crop&w=600&q=80", // Leather Jacket
-    "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=600&q=80", // T-Shirt
-    "https://images.unsplash.com/photo-1582966772680-860e372bb558?auto=format&fit=crop&w=600&q=80"  // Clothing
-  ],
-  accessories: [
-    "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?auto=format&fit=crop&w=600&q=80", // Watch
-    "https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=600&q=80", // Keyboard
-    "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=600&q=80"  // Accessory
-  ],
-  books: [
-    "https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&w=600&q=80", // Novel
-    "https://images.unsplash.com/photo-1506880018603-83d5b814b5a6?auto=format&fit=crop&w=600&q=80"  // Book
-  ],
-  default: [
-    "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?auto=format&fit=crop&w=600&q=80"
-  ]
-};
+function getSahiProductImage(productName: string, category: string): string {
+  // Clean product name to extract search term (e.g. "Vintage Jacket - Model v12" -> "vintage jacket")
+  let cleanName = productName.split("-")[0] || productName;
+  cleanName = cleanName.trim().toLowerCase();
 
-function getSahiProductImage(productName: string, category: string, index: number): string {
-  const nameLower = productName.toLowerCase();
-  const catLower = category.toLowerCase();
-
-  if (nameLower.includes("jacket")) {
-    return "https://images.unsplash.com/photo-1598550476439-6847785fcea6?auto=format&fit=crop&w=600&q=80";
-  }
-  if (nameLower.includes("shirt")) {
-    return "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=600&q=80";
-  }
-  if (nameLower.includes("socks")) {
-    return "https://images.unsplash.com/photo-1582966772680-860e372bb558?auto=format&fit=crop&w=600&q=80";
-  }
-  if (nameLower.includes("shoes") || nameLower.includes("sneakers")) {
-    return "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?auto=format&fit=crop&w=600&q=80";
-  }
-  if (nameLower.includes("watch")) {
-    return "https://images.unsplash.com/photo-1546868871-7041f2a55e12?auto=format&fit=crop&w=600&q=80";
-  }
-  if (nameLower.includes("headphone") || nameLower.includes("earbuds")) {
-    return "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80";
-  }
-  if (nameLower.includes("keyboard")) {
-    return "https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=600&q=80";
-  }
-  if (nameLower.includes("laptop")) {
-    return "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=600&q=80";
-  }
-
-  const imgs = categoryImages[catLower] || categoryImages.default;
-  return imgs[index % imgs.length] || categoryImages.default[0];
+  // Replace spaces with commas for Unsplash search redirect parameters
+  const keywords = cleanName.replace(/\s+/g, ",");
+  return `https://images.unsplash.com/featured/?${encodeURIComponent(keywords)},${encodeURIComponent(category.toLowerCase())}`;
 }
 
 function withPlaceholderImages(products: Product[]): Product[] {
-  return products.map((product, index) => ({
+  return products.map((product) => ({
     ...product,
-    imageUrl: product.imageUrl || getSahiProductImage(product.name, product.category, index),
+    imageUrl: product.imageUrl || getSahiProductImage(product.name, product.category),
   }));
 }
 
