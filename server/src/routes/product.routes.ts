@@ -191,10 +191,19 @@ router.get("/:id", async (req: Request, res: Response) => {
 // POST /api/products - Create a new product (Admin Only)
 router.post("/", verifyToken, requireAdmin, async (req: Request, res: Response) => {
   try {
-    const { name, description, price, stock, category, embedding } = req.body;
+    const { name, description, price, stock, category } = req.body;
 
     if (!name || !description || price === undefined || stock === undefined || !category) {
       return res.status(400).json({ error: "Missing required product fields" });
+    }
+
+    // Generate AI embedding on-the-fly based on name and description
+    let productEmbedding: number[];
+    try {
+      productEmbedding = await getEmbedding(`${name} ${description}`);
+    } catch (embedError) {
+      console.warn(`[AI Search] Failed to generate embedding on-the-fly: ${(embedError as Error).message}`);
+      productEmbedding = Array(384).fill(0);
     }
 
     const newProduct = new Product({
@@ -203,7 +212,7 @@ router.post("/", verifyToken, requireAdmin, async (req: Request, res: Response) 
       price,
       stock,
       category,
-      embedding: embedding || Array(384).fill(0) // Default zero vector if not provided
+      embedding: productEmbedding
     });
 
     await newProduct.save();
@@ -224,7 +233,19 @@ router.post("/", verifyToken, requireAdmin, async (req: Request, res: Response) 
 router.put("/:id", verifyToken, requireAdmin, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const updates = req.body;
+    const updates = { ...req.body };
+
+    // Re-calculate vector embedding if name or description has updated
+    if (updates.name || updates.description) {
+      try {
+        const currentProduct = await Product.findById(id);
+        const nameToUse = updates.name !== undefined ? updates.name : (currentProduct?.name || "");
+        const descToUse = updates.description !== undefined ? updates.description : (currentProduct?.description || "");
+        updates.embedding = await getEmbedding(`${nameToUse} ${descToUse}`);
+      } catch (embedError) {
+        console.warn(`[AI Search] Failed to recalculate embedding on update: ${(embedError as Error).message}`);
+      }
+    }
 
     const updatedProduct = await Product.findByIdAndUpdate(id, updates, { new: true, runValidators: true });
 
