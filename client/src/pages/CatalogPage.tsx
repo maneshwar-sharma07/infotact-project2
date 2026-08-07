@@ -7,14 +7,75 @@ import type { Product } from "../components/catalog/ProductCard";
 type PriceRange = "all" | "under-500" | "500-1000" | "over-1000";
 type Availability = "all" | "in-stock" | "out-of-stock";
 
+const nounImages: Record<string, string> = {
+  // Electronics
+  "wireless earbuds": "https://images.unsplash.com/photo-1606220945770-b5b6c2c55bf1?w=600&auto=format&fit=crop&q=80",
+  "smart watch": "https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=600&auto=format&fit=crop&q=80",
+  "bluetooth speaker": "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=600&auto=format&fit=crop&q=80",
+  "charging dock": "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=600&auto=format&fit=crop&q=80",
+  "phone case": "https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=600&auto=format&fit=crop&q=80",
+  "led monitor": "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=600&auto=format&fit=crop&q=80",
+  "mechanical keyboard": "https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=600&auto=format&fit=crop&q=80",
+
+  // Clothing
+  "winter hooded jacket": "https://images.unsplash.com/photo-1598550476439-6847785fcea6?w=600&auto=format&fit=crop&q=80",
+  "cotton t-shirt": "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=600&auto=format&fit=crop&q=80",
+  "running shoes": "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&auto=format&fit=crop&q=80",
+  "athletic socks": "https://images.unsplash.com/photo-1582966772680-860e372bb558?w=600&auto=format&fit=crop&q=80",
+  "leather belt": "https://images.unsplash.com/photo-1624222247344-550fb8ecf7db?w=600&auto=format&fit=crop&q=80",
+  "denim jeans": "https://images.unsplash.com/photo-1542272604-787c3835535d?w=600&auto=format&fit=crop&q=80",
+  "woolen beanie": "https://images.unsplash.com/photo-1576871337622-98d48d4aa53e?w=600&auto=format&fit=crop&q=80",
+
+  // Home & Kitchen
+  "coffee maker": "https://images.unsplash.com/photo-1517256064527-09c53b2d0bc6?w=600&auto=format&fit=crop&q=80",
+  "air fryer": "https://images.unsplash.com/photo-1621972750749-0fbb1abb7736?w=600&auto=format&fit=crop&q=80",
+  "vacuum cleaner": "https://images.unsplash.com/photo-1558317374-067fb5f30001?w=600&auto=format&fit=crop&q=80",
+  "non-stick skillet": "https://images.unsplash.com/photo-1584269600464-37b1b58a9fe7?w=600&auto=format&fit=crop&q=80",
+  "food blender": "https://images.unsplash.com/photo-1578643463396-0997cb5328c1?w=600&auto=format&fit=crop&q=80",
+  "water purifier": "https://images.unsplash.com/photo-1617196034183-421b4917c92d?w=600&auto=format&fit=crop&q=80",
+  "silicone spatula set": "https://images.unsplash.com/photo-1590794056226-79ef3a8147e1?w=600&auto=format&fit=crop&q=80",
+
+  // Books
+  "mystery novel": "https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=600&auto=format&fit=crop&q=80",
+  "sci-fi trilogy": "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=600&auto=format&fit=crop&q=80",
+  "self-help journal": "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=600&auto=format&fit=crop&q=80",
+  "cooking masterclass": "https://images.unsplash.com/photo-1506880018603-83d5b814b5a6?w=600&auto=format&fit=crop&q=80",
+  "coding handbook": "https://images.unsplash.com/photo-1515879218367-8466d910aaa4?w=600&auto=format&fit=crop&q=80",
+  "history encyclopedia": "https://images.unsplash.com/photo-1509021436665-8f07dbf5bf1d?w=600&auto=format&fit=crop&q=80",
+
+  // Sports & Outdoors
+  "camping tent": "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=600&auto=format&fit=crop&q=80",
+  "waterproof backpack": "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=600&auto=format&fit=crop&q=80",
+  "yoga mat": "https://images.unsplash.com/photo-1592432678016-e910b452f9a2?w=600&auto=format&fit=crop&q=80",
+  "dumbbell set": "https://images.unsplash.com/photo-1638536532686-d610adfc8e5c?w=600&auto=format&fit=crop&q=80",
+  "sleeping bag": "https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?w=600&auto=format&fit=crop&q=80",
+  "bicycle helmet": "https://images.unsplash.com/photo-1557166983-5939644443a0?w=600&auto=format&fit=crop&q=80",
+  "hiking poles": "https://images.unsplash.com/photo-1582201942988-13e60e4556ee?w=600&auto=format&fit=crop&q=80",
+
+  // Beauty & Care
+  "face moisturizer": "https://images.unsplash.com/photo-1608248597279-f99d160bfcbc?w=600&auto=format&fit=crop&q=80",
+  "sunscreen lotion": "https://images.unsplash.com/photo-1526947425960-945c6e72858f?w=600&auto=format&fit=crop&q=80",
+  "hair dryer": "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=600&auto=format&fit=crop&q=80",
+  "organic shampoo": "https://images.unsplash.com/photo-1535585209827-a15fcdbc4c2d?w=600&auto=format&fit=crop&q=80",
+  "electric toothbrush": "https://images.unsplash.com/photo-1609840114035-3c981b782dfe?w=600&auto=format&fit=crop&q=80",
+  "beard oil": "https://images.unsplash.com/photo-1626015276681-285a6607b0f7?w=600&auto=format&fit=crop&q=80"
+};
+
 function getSahiProductImage(productName: string, category: string): string {
-  // Clean product name to extract search term (e.g. "Vintage Jacket - Model v12" -> "vintage jacket")
+  const nameLower = productName.toLowerCase();
+
+  // 1. Search seeded dictionary for exact match
+  for (const [nounKey, imageUrl] of Object.entries(nounImages)) {
+    if (nameLower.includes(nounKey)) {
+      return imageUrl;
+    }
+  }
+
+  // 2. Fallback to loremflickr dynamic query for custom added products
   let cleanName = productName.split("-")[0] || productName;
   cleanName = cleanName.trim().toLowerCase();
-
-  // Replace spaces with commas for Unsplash search redirect parameters
   const keywords = cleanName.replace(/\s+/g, ",");
-  return `https://images.unsplash.com/featured/?${encodeURIComponent(keywords)},${encodeURIComponent(category.toLowerCase())}`;
+  return `https://loremflickr.com/600/400/${encodeURIComponent(keywords)}`;
 }
 
 function withPlaceholderImages(products: Product[]): Product[] {
