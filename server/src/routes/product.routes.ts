@@ -105,6 +105,22 @@ router.get("/search/keyword", async (req: Request, res: Response) => {
   }
 });
 
+function cosineSimilarity(vecA: number[], vecB: number[]): number {
+  if (!vecA.length || !vecB.length || vecA.length !== vecB.length) return 0;
+  let dotProduct = 0;
+  let normA = 0;
+  let normB = 0;
+  for (let i = 0; i < vecA.length; i++) {
+    const a = vecA[i] || 0;
+    const b = vecB[i] || 0;
+    dotProduct += a * b;
+    normA += a * a;
+    normB += b * b;
+  }
+  if (normA === 0 || normB === 0) return 0;
+  return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+}
+
 // GET /api/products/semantic-search - AI Vector Semantic Search (Cached)
 router.get("/semantic-search", async (req: Request, res: Response) => {
   try {
@@ -148,12 +164,29 @@ router.get("/semantic-search", async (req: Request, res: Response) => {
         ]);
       } catch (aggregationErr) {
         // Fallback for local MongoDB standalone instances where Atlas Vector Index is not pre-configured
-        products = await Product.find({
-          $or: [
-            { name: { $regex: cleanQuery, $options: "i" } },
-            { description: { $regex: cleanQuery, $options: "i" } }
-          ]
-        }).limit(limit);
+        console.log("[AI Search] MongoDB Atlas Vector Search not available. Running local Cosine Similarity fallback...");
+        
+        // Fetch all products from local DB (including their embeddings)
+        const allProducts = await Product.find({});
+        
+        const scoredProducts = allProducts.map(p => {
+          const score = cosineSimilarity(queryVector, p.embedding || []);
+          return {
+            id: p._id.toString(),
+            name: p.name,
+            description: p.description,
+            price: p.price,
+            stock: p.stock,
+            category: p.category,
+            score: score
+          };
+        });
+
+        // Sort descending by score, filter out low similarity scores, and limit results
+        products = scoredProducts
+          .filter(p => p.score > 0.05)
+          .sort((a, b) => b.score - a.score)
+          .slice(0, limit);
       }
 
       return {
