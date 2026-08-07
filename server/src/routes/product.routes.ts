@@ -189,7 +189,7 @@ router.get("/:id", async (req: Request, res: Response) => {
   }
 });
 // POST /api/products - Create a new product (Admin Only)
-router.post("/", async (req: Request, res: Response) => {
+router.post("/", verifyToken, requireAdmin, async (req: Request, res: Response) => {
   try {
     const { name, description, price, stock, category, embedding } = req.body;
 

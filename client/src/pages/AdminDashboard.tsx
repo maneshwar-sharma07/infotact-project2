@@ -3,13 +3,23 @@ import axios from "axios";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import api from "../services/api";
 
+import { useAuth } from "../hooks/useAuth";
+
 type ProductForm = { name: string; description: string; price: string; stock: string; category: string; };
 const emptyForm: ProductForm = { name: "", description: "", price: "", stock: "", category: "" };
 const errorMessage = (error: unknown) => axios.isAxiosError(error) && typeof error.response?.data?.error === "string" ? error.response.data.error : "Operation failed. Please try again.";
 
 export default function AdminDashboard() {
+  const { user } = useAuth();
   const [searchParams] = useSearchParams(); const navigate = useNavigate(); const productId = searchParams.get("id");
   const [form, setForm] = useState<ProductForm>(emptyForm); const [loading, setLoading] = useState(false); const [fetching, setFetching] = useState(Boolean(productId)); const [success, setSuccess] = useState(""); const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!user || user.role !== "admin") {
+      navigate("/");
+    }
+  }, [user, navigate]);
+
   useEffect(() => { if (!productId) return; const fetchProduct = async () => { try { const { data } = await api.get<ProductForm>(`/products/${productId}`); setForm({ name: data.name, description: data.description, price: String(data.price), stock: String(data.stock), category: data.category }); } catch (requestError: unknown) { setError(errorMessage(requestError)); } finally { setFetching(false); } }; void fetchProduct(); }, [productId]);
   const handleChange = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm((current) => ({ ...current, [event.target.name]: event.target.value }));
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); setLoading(true); setError(""); setSuccess(""); const payload = { ...form, price: Number(form.price), stock: Number(form.stock) }; try { if (productId) await api.put(`/products/${productId}`, payload); else await api.post("/products", { ...payload, embedding: [0] }); setSuccess(productId ? "Product updated successfully." : "Product added successfully."); window.setTimeout(() => navigate("/"), 1000); } catch (requestError: unknown) { setError(errorMessage(requestError)); } finally { setLoading(false); } };
