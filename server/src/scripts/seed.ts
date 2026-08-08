@@ -29,33 +29,27 @@ const seedDatabase = async () => {
     console.log("[Seeder] Clearing existing products from database...");
     await Product.deleteMany({});
 
-    console.log("[Seeder] Pre-computing category AI embeddings...");
-    const baseEmbeddingMap: Record<string, number[]> = {};
-
-    for (const cat of categories) {
-      try {
-        console.log(`[Seeder] Computing base vector for category: ${cat}`);
-        baseEmbeddingMap[cat] = await getEmbedding(`High performance ${cat} product for everyday usage`);
-      } catch (err) {
-        baseEmbeddingMap[cat] = generateMockEmbedding(384);
-      }
-    }
-
-    console.log("[Seeder] Generating 1000 catalog products...");
+    console.log("[Seeder] Generating 120 catalog products with real AI vector embeddings...");
     const mockProducts = [];
 
-    for (let i = 1; i <= 1000; i++) {
+    for (let i = 1; i <= 120; i++) {
       const category = categories[Math.floor(Math.random() * categories.length)] as keyof typeof nouns;
       const adjective = adjectives[Math.floor(Math.random() * adjectives.length)] ?? "Premium";
       const item = nouns[category][Math.floor(Math.random() * nouns[category].length)] ?? "Product";
 
       const name = `${adjective} ${item} - Model v${i}`;
       const description = `This is a ${adjective.toLowerCase()} ${item.toLowerCase()} designed for premium performance. Built with quality materials to ensure durability and style. Ideal for everyday use under various conditions.`;
-      const price = parseFloat((Math.random() * 490 + 10).toFixed(2));
-      const stock = Math.floor(Math.random() * 100) + 5;
+      const price = parseFloat((Math.random() * 4900 + 100).toFixed(2));
+      const stock = Math.floor(Math.random() * 80) + 5;
 
-      const baseVector = baseEmbeddingMap[category] || generateMockEmbedding(384);
-      const embedding = baseVector.map(val => parseFloat((val + (Math.random() * 0.08 - 0.04)).toFixed(6)));
+      console.log(`[Seeder] Computing vector embedding ${i}/120: ${name}`);
+      let embedding: number[];
+      try {
+        embedding = await getEmbedding(`${name} ${description}`);
+      } catch (err) {
+        console.warn(`[Seeder] Failed to compute embedding, using mock fallback: ${(err as Error).message}`);
+        embedding = generateMockEmbedding(384);
+      }
 
       mockProducts.push({
         name,
@@ -67,11 +61,11 @@ const seedDatabase = async () => {
       });
     }
 
-    console.log("[Seeder] Inserting 1000 products into MongoDB...");
+    console.log("[Seeder] Inserting 120 products into MongoDB...");
     await Product.insertMany(mockProducts);
 
     console.log("==========================================");
-    console.log("✅ [SUCCESS] Database successfully seeded with 1,000 products!");
+    console.log("✅ [SUCCESS] Database successfully seeded with 120 high-fidelity products!");
     console.log("==========================================");
 
     process.exit(0);
