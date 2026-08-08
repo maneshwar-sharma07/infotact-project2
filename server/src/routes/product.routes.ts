@@ -1,10 +1,13 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
-import Product from "../models/Product.js";
-import { verifyToken, requireAdmin } from "../middleware/auth.js";
-import { getOrSetCache, invalidateCatalogCache } from "../middleware/cache.js";
-import { getEmbedding } from "../services/embedding.service.js";
+
+
+import Product from "../models/Product";
+import { verifyToken, requireAdmin } from "../middleware/auth";
+import { getOrSetCache, invalidateCatalogCache } from "../middleware/cache";
+import { getEmbedding } from "../services/embedding.service";
 const router = Router();
+
 
 // GET /api/products - Retrieve product list with pagination, sorting, and category filters (Cached)
 router.get("/", async (req: Request, res: Response) => {
@@ -224,7 +227,7 @@ router.get("/:id", async (req: Request, res: Response) => {
 // POST /api/products - Create a new product (Admin Only)
 router.post("/", verifyToken, requireAdmin, async (req: Request, res: Response) => {
   try {
-    const { name, description, price, stock, category } = req.body;
+    const { name, description, price, stock, category, imageUrl } = req.body;
 
     if (!name || !description || price === undefined || stock === undefined || !category) {
       return res.status(400).json({ error: "Missing required product fields" });
@@ -245,6 +248,7 @@ router.post("/", verifyToken, requireAdmin, async (req: Request, res: Response) 
       price,
       stock,
       category,
+      imageUrl,
       embedding: productEmbedding
     });
 

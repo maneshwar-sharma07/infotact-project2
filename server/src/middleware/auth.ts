@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET || "your_super_secret_key_min_32_chars";
+export const getJwtSecret = (): string => process.env.JWT_SECRET || "your_super_secret_key_min_32_chars";
 
 // Extend Express Request namespace globally to include our user object
 declare global {
@@ -30,8 +30,11 @@ export const verifyToken = (req: Request, res: Response, next: NextFunction) => 
     }
 
     // Verify token
-    const decoded = jwt.verify(token, JWT_SECRET) as NonNullable<Express.Request["user"]>;
-    req.user = decoded;
+    const decoded = jwt.verify(token, getJwtSecret());
+    if (typeof decoded !== "object" || decoded === null || typeof decoded.id !== "string" || typeof decoded.email !== "string" || (decoded.role !== "admin" && decoded.role !== "customer")) {
+      return res.status(401).json({ error: "Invalid or expired token." });
+    }
+    req.user = { id: decoded.id, email: decoded.email, role: decoded.role };
     next();
   } catch (error) {
     return res.status(401).json({ error: "Invalid or expired token." });

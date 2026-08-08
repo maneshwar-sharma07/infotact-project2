@@ -2,7 +2,6 @@ import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import AuthLayout, { authInputClass, googleButtonClass, primaryButtonClass } from "../components/auth/AuthLayout";
 import { useAuth } from "../hooks/useAuth";
-
 export default function LoginPage() {
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -25,3 +24,5 @@ export default function LoginPage() {
     <p className="mt-8 text-center text-sm text-gray-400">Don't have an account? <Link to="/signup" className="font-semibold text-cyan-400 transition hover:text-cyan-300 hover:underline">Create Account</Link></p>
   </AuthLayout>;
 }
+
+

@@ -1,22 +1,22 @@
 import { Redis } from "ioredis";
 import dotenv from "dotenv";
 
-
 dotenv.config();
 
-const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
-
+const REDIS_URL = process.env.REDIS_URL;
 export let redisAvailable = false;
 
-export const redisClient = new Redis(REDIS_URL, {
+export const redisClient = new Redis(REDIS_URL ?? "redis://localhost:6379", {
   lazyConnect: true,
   maxRetriesPerRequest: 1,
-  retryStrategy() {
-    return null;
-  }
+  retryStrategy: () => null
 });
 
-(async () => {
+const connectRedis = async (): Promise<void> => {
+  if (!REDIS_URL) {
+    console.log("[Redis] REDIS_URL not configured. Running without cache.");
+    return;
+  }
   try {
     await redisClient.connect();
     redisAvailable = true;
@@ -25,13 +25,23 @@ export const redisClient = new Redis(REDIS_URL, {
     redisAvailable = false;
     console.log("[Redis] Redis not available. Running without cache.");
   }
-})();
+};
 
-// Optional logging
+void connectRedis();
+
 redisClient.on("ready", () => {
+  redisAvailable = true;
   console.log("[Redis] Ready");
 });
 
 redisClient.on("error", () => {
-  // Ignore Redis errors during frontend development
+  redisAvailable = false;
+});
+
+redisClient.on("end", () => {
+  redisAvailable = false;
+});
+
+redisClient.on("close", () => {
+  redisAvailable = false;
 });

@@ -1,0 +1,5 @@
+type QuantitySelectorProps = { value: number; max: number; onChange: (quantity: number) => void; disabled?: boolean };
+
+export default function QuantitySelector({ value, max, onChange, disabled = false }: QuantitySelectorProps) {
+  return <div className="inline-flex items-center rounded-xl border border-white/10 bg-[#0A0A0F] p-1" aria-label="Select quantity"><button type="button" onClick={() => onChange(Math.max(1, value - 1))} disabled={disabled || value <= 1} className="grid h-10 w-10 place-items-center rounded-lg text-xl text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-30" aria-label="Decrease quantity">&minus;</button><span className="min-w-10 text-center font-bold text-white" aria-live="polite">{value}</span><button type="button" onClick={() => onChange(Math.min(max, value + 1))} disabled={disabled || value >= max} className="grid h-10 w-10 place-items-center rounded-lg text-xl text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-30" aria-label="Increase quantity">+</button></div>;
+}

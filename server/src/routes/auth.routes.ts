@@ -6,13 +6,13 @@ import User from "../models/User";
 import { validateRegister, validateLogin } from "../middleware/validate";
 
 const router = Router();
-const JWT_SECRET = process.env.JWT_SECRET || "your_super_secret_key_min_32_chars";
+const getJwtSecret = (): string => process.env.JWT_SECRET || "your_super_secret_key_min_32_chars";
 const JWT_EXPIRES_IN = (process.env.JWT_EXPIRES_IN || "7d") as NonNullable<SignOptions["expiresIn"]>;
 
 // POST /auth/register - Register a new user
 router.post("/register", validateRegister, async (req: Request, res: Response) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({ error: "Name, email, and password are required" });
@@ -33,15 +33,15 @@ router.post("/register", validateRegister, async (req: Request, res: Response) =
       name,
       email,
       passwordHash,
-      role: role || "customer"
+      role: "customer"
     });
 
     await newUser.save();
 
     // Generate JWT token
     const token = jwt.sign(
-      { id: newUser._id, email: newUser.email, role: newUser.role },
-      JWT_SECRET,
+      { id: newUser._id.toString(), email: newUser.email, role: newUser.role },
+      getJwtSecret(),
       { expiresIn: JWT_EXPIRES_IN as any }
     );
 
@@ -78,8 +78,8 @@ router.post("/login", validateLogin, async (req: Request, res: Response) => {
 
     // Generate JWT token
     const token = jwt.sign(
-      { id: user._id, email: user.email, role: user.role },
-      JWT_SECRET,
+      { id: user._id.toString(), email: user.email, role: user.role },
+      getJwtSecret(),
       { expiresIn: JWT_EXPIRES_IN as any }
     );
 
