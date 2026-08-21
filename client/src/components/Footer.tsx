@@ -1,14 +1,17 @@
 import { Link } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
 
-const QUICK_LINKS: [string, string][] = [["Home", "/"], ["Catalog", "/catalog"], ["Admin", "/admin"], ["Login", "/login"]];
+const QUICK_LINKS: [string, string][] = [["Home", "/"], ["Catalog", "/catalog"], ["Login", "/login"]];
 const CATEGORY_LINKS: [string, string][] = [["Electronics", "/catalog"], ["Fashion", "/catalog"], ["Books", "/catalog"], ["Accessories", "/catalog"]];
 
 export default function Footer() {
+  const { user } = useAuth();
+  const quickLinks = user?.role === "admin" ? [...QUICK_LINKS.slice(0, 2), ["Admin", "/admin"] as [string, string], QUICK_LINKS[2]] : QUICK_LINKS;
   return <footer className="border-t border-gray-800 bg-[#0A0A0F]">
     <div className="mx-auto w-full max-w-[1600px] px-4 py-14 sm:px-6 sm:py-16 lg:px-8">
       <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr] lg:gap-12">
         <div><Link to="/" className="text-2xl font-bold text-purple-400">ShopSphere</Link><p className="mt-4 max-w-sm leading-7 text-gray-400">Curated products and a premium shopping experience, all in one place.</p><div className="mt-6 flex gap-3"><SocialLink label="Instagram">◎</SocialLink><SocialLink label="Facebook">f</SocialLink><SocialLink label="X">𝕏</SocialLink></div></div>
-        <FooterLinks title="Quick Links" links={QUICK_LINKS} />
+        <FooterLinks title="Quick Links" links={quickLinks} />
         <FooterLinks title="Categories" links={CATEGORY_LINKS} />
         <div><h2 className="text-base font-semibold text-white">Contact</h2><div className="mt-4 space-y-3 text-sm leading-6 text-gray-400"><p><a href="mailto:support@shopsphere.com" className="transition hover:text-cyan-400">support@shopsphere.com</a></p><p>India</p><p>Monday–Friday, 9:00 AM–6:00 PM</p></div></div>
       </div>

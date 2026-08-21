@@ -1,4 +1,4 @@
-import { redisClient, redisAvailable } from "../config/redis";
+import { markRedisUnavailable, redisClient, redisAvailable } from "../config/redis";
 /**
  * Generic cache-aside helper function that wraps database operations with caching and performance logging.
  * @param key Unique cache key string
@@ -11,7 +11,7 @@ export const getOrSetCache = async <T>(
   fetchFunction: () => Promise<T>,
   ttlSeconds: number = 600
 ): Promise<T> => {
-  if (!redisAvailable) return fetchFunction();
+  if (!redisAvailable || !redisClient) return fetchFunction();
   const startTime = performance.now();
 
   try {
@@ -38,16 +38,16 @@ export const getOrSetCache = async <T>(
     await redisClient.set(key, JSON.stringify(freshData), "EX", finalTTL);
 
     return freshData;
-  } catch (error) {
+  } catch {
     // Fail-silent fallback: If Redis encounters an error, query database directly
-    console.error(`[Cache] Error in getOrSetCache for key ${key}: ${(error as Error).message}`);
+    markRedisUnavailable();
     return await fetchFunction();
   }
 };
 
 // Invalidate all cached product catalog queries dynamically (production-safe using SCAN)
 export const invalidateCatalogCache = async (): Promise<void> => {
-  if (!redisAvailable) return;
+  if (!redisAvailable || !redisClient) return;
   try {
     console.log("[Cache] Invalidation triggered. Scanning for keys to evict...");
     let cursor = "0";
@@ -104,7 +104,7 @@ export const invalidateCatalogCache = async (): Promise<void> => {
     } while (cursor !== "0");
 
     console.log("[Cache] Catalog, details, and search cache invalidation completed successfully.");
-  } catch (error) {
-    console.error(`[Cache] Error during cache invalidation: ${(error as Error).message}`);
+  } catch {
+    markRedisUnavailable();
   }
 };

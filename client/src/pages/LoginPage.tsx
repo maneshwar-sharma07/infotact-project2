@@ -9,7 +9,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); setError(""); if (!email.trim() || !password) { setError("Email and password are required."); return; } setLoading(true); try { await login(email.trim(), password); navigate("/"); } catch (requestError: unknown) { setError(requestError instanceof Error ? requestError.message : "Login failed."); } finally { setLoading(false); } };
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); setError(""); if (!email.trim() || !password) { setError("Email and password are required."); return; } setLoading(true); try { const user = await login(email.trim(), password); navigate(user.role === "admin" ? "/admin" : "/"); } catch (requestError: unknown) { setError(requestError instanceof Error ? requestError.message : "Login failed."); } finally { setLoading(false); } };
 
   return <AuthLayout eyebrow="Welcome back" title="Sign in to ShopSphere" subtitle="Continue discovering products picked for every part of your day.">
     {error && <div role="alert" className="mt-7 rounded-xl border border-red-500/70 bg-red-500/10 px-4 py-3 text-sm text-red-300">{error}</div>}

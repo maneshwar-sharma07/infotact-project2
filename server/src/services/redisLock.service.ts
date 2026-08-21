@@ -1,4 +1,4 @@
-import { redisAvailable, redisClient } from "../config/redis";
+import { markRedisUnavailable, redisAvailable, redisClient } from "../config/redis";
 
 /**
  * Helper utility to pause execution for lock retry delays
@@ -21,7 +21,7 @@ export const acquireLock = async (
   retryAttempts: number = 5,
   retryDelayMs: number = 100
 ): Promise<boolean> => {
-  if (!redisAvailable) return true;
+  if (!redisAvailable || !redisClient) return true;
   const lockKey = `lock:product:${productId}`;
 
   for (let attempt = 1; attempt <= retryAttempts; attempt++) {
@@ -33,8 +33,9 @@ export const acquireLock = async (
         console.log(`[Redis Lock] ACQUIRED for product ${productId} (Attempt ${attempt})`);
         return true;
       }
-    } catch (error) {
-      console.error(`[Redis Lock] Error acquiring lock for product ${productId}: ${(error as Error).message}`);
+    } catch {
+      markRedisUnavailable();
+      return true;
     }
 
     // Wait before retrying
@@ -53,12 +54,12 @@ export const acquireLock = async (
  * @param productId Target product ID to unlock
  */
 export const releaseLock = async (productId: string): Promise<void> => {
-  if (!redisAvailable) return;
+  if (!redisAvailable || !redisClient) return;
   const lockKey = `lock:product:${productId}`;
   try {
     await redisClient.del(lockKey);
     console.log(`[Redis Lock] RELEASED for product ${productId}`);
-  } catch (error) {
-    console.error(`[Redis Lock] Error releasing lock for product ${productId}: ${(error as Error).message}`);
+  } catch {
+    markRedisUnavailable();
   }
 };

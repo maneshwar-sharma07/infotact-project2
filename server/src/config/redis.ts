@@ -5,12 +5,13 @@ dotenv.config();
 
 const REDIS_URL = process.env.REDIS_URL;
 export let redisAvailable = false;
+export const markRedisUnavailable = (): void => { redisAvailable = false; };
 
-export const redisClient = new Redis(REDIS_URL ?? "redis://localhost:6379", {
+export const redisClient = REDIS_URL ? new Redis(REDIS_URL, {
   lazyConnect: true,
   maxRetriesPerRequest: 1,
   retryStrategy: () => null
-});
+}) : null;
 
 const connectRedis = async (): Promise<void> => {
   if (!REDIS_URL) {
@@ -18,7 +19,7 @@ const connectRedis = async (): Promise<void> => {
     return;
   }
   try {
-    await redisClient.connect();
+    await redisClient?.connect();
     redisAvailable = true;
     console.log("[Redis] Connected successfully.");
   } catch {
@@ -29,19 +30,19 @@ const connectRedis = async (): Promise<void> => {
 
 void connectRedis();
 
-redisClient.on("ready", () => {
+redisClient?.on("ready", () => {
   redisAvailable = true;
   console.log("[Redis] Ready");
 });
 
-redisClient.on("error", () => {
-  redisAvailable = false;
+redisClient?.on("error", () => {
+  markRedisUnavailable();
 });
 
-redisClient.on("end", () => {
-  redisAvailable = false;
+redisClient?.on("end", () => {
+  markRedisUnavailable();
 });
 
-redisClient.on("close", () => {
-  redisAvailable = false;
+redisClient?.on("close", () => {
+  markRedisUnavailable();
 });

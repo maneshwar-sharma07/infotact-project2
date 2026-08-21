@@ -34,7 +34,7 @@ const runConcurrencyTest = async () => {
     await Order.deleteMany({ "items.product": testProduct._id });
 
     // Release any lingering Redis lock key
-    await redisClient.del(`lock:product:${productId}`);
+    await redisClient?.del(`lock:product:${productId}`);
 
     console.log(`[Setup] Created product: ${testProduct.name} | Stock: ${testProduct.stock}`);
 

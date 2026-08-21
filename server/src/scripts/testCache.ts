@@ -18,7 +18,7 @@ const runCacheTest = async () => {
     const testCacheKey = "catalog:page:1:limit:20:category:all:sort:newest";
 
     // Clear test key to ensure fresh start
-    await redisClient.del(testCacheKey);
+    await redisClient?.del(testCacheKey);
 
     // 2. TEST 1: Cache Miss
     console.log("\n--- TEST 1: Cache Miss (Database Fallback) ---");
@@ -45,7 +45,7 @@ const runCacheTest = async () => {
     // 4. TEST 3: Invalidation
     console.log("\n--- TEST 3: Invalidation Eviction Check ---");
     await invalidateCatalogCache();
-    const keyExists = await redisClient.get(testCacheKey);
+    const keyExists = await redisClient?.get(testCacheKey);
 
     if (!keyExists) {
       console.log("✅ [PASS] Invalidation successful! Stale cache key was evicted from Redis.");

@@ -9,6 +9,13 @@ const router = Router();
 const getJwtSecret = (): string => process.env.JWT_SECRET || "your_super_secret_key_min_32_chars";
 const JWT_EXPIRES_IN = (process.env.JWT_EXPIRES_IN || "7d") as NonNullable<SignOptions["expiresIn"]>;
 
+const toAuthenticatedUser = (user: { _id: { toString(): string }; name: string; email: string; role: "admin" | "customer" }) => ({
+  id: user._id.toString(),
+  name: user.name,
+  email: user.email,
+  role: user.role
+});
+
 // POST /auth/register - Register a new user
 router.post("/register", validateRegister, async (req: Request, res: Response) => {
   try {
@@ -48,7 +55,7 @@ router.post("/register", validateRegister, async (req: Request, res: Response) =
     return res.status(201).json({
       message: "Registration successful",
       token,
-      user: newUser.toJSON()
+      user: toAuthenticatedUser(newUser)
     });
   } catch (error) {
     return res.status(500).json({ error: (error as Error).message });
@@ -76,9 +83,11 @@ router.post("/login", validateLogin, async (req: Request, res: Response) => {
       return res.status(401).json({ error: "Invalid email or password" });
     }
 
-    // Generate JWT token
+    const authenticatedUser = toAuthenticatedUser(user);
+
+    // Generate JWT from the role read from the database.
     const token = jwt.sign(
-      { id: user._id.toString(), email: user.email, role: user.role },
+      authenticatedUser,
       getJwtSecret(),
       { expiresIn: JWT_EXPIRES_IN as any }
     );
@@ -86,7 +95,7 @@ router.post("/login", validateLogin, async (req: Request, res: Response) => {
     return res.json({
       message: "Login successful",
       token,
-      user: user.toJSON()
+      user: authenticatedUser
     });
   } catch (error) {
     return res.status(500).json({ error: (error as Error).message });

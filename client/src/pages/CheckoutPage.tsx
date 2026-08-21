@@ -1,10 +1,18 @@
 import { useState, type FormEvent } from "react";
+import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import EmptyState from "../components/commerce/EmptyState";
 import { useCart } from "../context/CartContext";
 import { useToast } from "../context/ToastContext";
 import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
+
+function getOrderError(error: unknown): string {
+  if (!axios.isAxiosError(error)) return "We could not place your order. Please try again.";
+  const data = error.response?.data as { error?: unknown; message?: unknown } | undefined;
+  const message = data?.error ?? data?.message;
+  return typeof message === "string" && message.trim() ? message : "We could not place your order. Please try again.";
+}
 
 const money = (value: number) => `₹${value.toLocaleString("en-IN")}`;
 
@@ -59,9 +67,10 @@ export default function CheckoutPage() {
 
     setSaving(true);
     try {
-      const response = await api.post<{ order: { id: string } }>("/orders", { items: items.map((item) => ({ product: item.id, name: item.name, price: item.price, quantity: item.quantity, imageUrl: item.imageUrl })), totalAmount: total, shippingAddress: address, paymentMethod: payment });
+      const response = await api.post<{ order: { id: string } }>("/orders", { items: items.map((item) => ({ product: item.id, name: item.name, price: item.price, quantity: item.quantity, imageUrl: item.imageUrl })), shippingAddress: address, paymentMethod: payment });
+      if (!response.data.order?.id) throw new Error("Order was created but no order ID was returned.");
       clearCart(); notify("Order placed successfully."); navigate(`/orders/${response.data.order.id}`);
-    } catch { notify("We could not place your order. Please try again.", "error"); }
+    } catch (error: unknown) { notify(axios.isAxiosError(error) ? getOrderError(error) : error instanceof Error ? error.message : getOrderError(error), "error"); }
     finally { setSaving(false); }
   };
 

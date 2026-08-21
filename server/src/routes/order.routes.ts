@@ -112,7 +112,7 @@ router.post("/", verifyToken, async (req: Request, res: Response) => {
       }
     }
     await invalidateCatalogCache();
-    return res.status(201).json({ message: "Order created successfully.", order });
+    return res.status(201).json({ message: "Order created successfully.", order: order.toJSON() });
   } catch (error) {
     for (const item of decremented) await Product.findByIdAndUpdate(item.productId, { $inc: { stock: item.quantity } }).catch(() => undefined);
     return res.status(500).json({ error: (error as Error).message, code: "ERR_INTERNAL_FAILURE" });
